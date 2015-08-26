@@ -1,0 +1,78 @@
+
+This directory contains the master solution to the CMSC412 project.  The kernel
+it builds contains solutions to all of the projects in a single kernel.  This
+directory is also used to automatically generate the directory with the initial 
+code for the students to use by running the script redactor.rb.
+
+Generating a Canonical Solution:
+
+For the submit server, there must be a canonical solution for each project that
+passes all of the test cases.  The master solution is a canonical solution for
+all of the projects.  
+
+To load master solution as a canonical solution to the submit server:
+
+    - Edit this .submit file in this directory (or better yet save the link
+	... from the submit server when the project has been created.
+
+    - type "make submit"
+
+
+Building and running the solution locally:
+	
+    - make run
+
+Creating a student version of the code:
+
+    - edit the first couple of lines of redactor.rb to specify the destination
+	directory.  The destination should be outside the geekos/admin 
+	directory since the admin directory is password protected to keep 
+	students from seeing the solution or tests code.
+
+    - run "./redactory.rb"
+
+    - cd to the destination directory
+
+    - run "make run" to verify that the redacted code still compiles and runs.
+
+    - run "svn commit" (or "svn add" first if its a new destination directory)	  	
+      This will make the student code available for checkout by students.
+
+
+Using the Redactor Markups:
+
+To allow the redactor to remove the solution code from the student code 
+templates, a series of markups may be included in the master solution.  
+The markup tags should be inserted into comment lines of the source 
+language (generally C or assembly code). The markups tags are:
+
+solution	Start of solution code that will be redacted from student
+		version.  All code until the /solution tag is seen will be
+		redacted.
+
+/solution	End of solution code.  Code from this point to the next 
+		redactor markup will be included in the student code.
+
+scaffold	Define the rest of the line as scaffold code to be included
+		in the redacted code.  This can be used to provide minimal
+		implementation of some functionality that is more complete
+		in the code marked in the corresponding solution block.  For
+		example, when supplying an empty function for students, the
+		line // scaffold return -1;  will cause the redacted code
+		to always return a -1, but not run in the full solution.
+
+TODO		This generates a C macro in the student code.  It provides a
+		way to mark in the code where students need to add code to
+		do a specific project. The markup takes two arguments 
+		(projectName and comment).  The TODO macro is defined so that if
+		projectName macro is defined as true in the file
+		include/geekos/projects.h, runtime execution reaching a TODO
+		macro will cause a kernel assert and print the comment.  This
+		can be used to ensure students find code spots they forgot to
+		write when they run there projects for testing. Since it is
+		in a C comment, the TODO macro has no impact on the master 
+		solution.
+
+When adding new code using the redactor markups, always run the redactor and 
+manually make sure the resulting code exposes only the desired amount of code
+(and not parts of the solution).
