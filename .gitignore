@@ -1,0 +1,21 @@
+# Submit Files
+submit.jar
+.submitUser
+
+# Build Files
+build/.gdbinit
+build/output.log
+build/common
+build/tools
+build/libc/
+build/tools/gfs2f
+build/geekos/
+build/user
+build/**.o
+build/**.exe
+build/**.bin
+build/**.img
+build/**.plist
+build/**.syms
+build/**.a
+*.mak
