@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
                 List_File(dirent.name, &dirent.stats);
             else {
                 Print("Could not read directory entry: %s\n",
-                      Get_Error_String(rc));
+                      Get_Error_String(r));
                 Exit(1);
             }
         }
