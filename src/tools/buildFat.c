@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
     ret = stat(imageFile, &sbuf);
     if(ret) {
         perror("stat");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     fileArgs = argc - curr;
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     diskSize = sbuf.st_size;
     if(diskSize % SECTOR_SIZE != 0) {
         printf("image is not a multiple of 512 bytes\n");
-        exit(-1);
+        exit(EXIT_FAILURE);
     }
 
     blocks = diskSize / SECTOR_SIZE;
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
             if(ret != 0) {
                 printf("buildFat FATAL ERROR: Error stat()ing %s: %s\n",
                        filename, strerror(errno));
-                exit(-1);
+                exit(EXIT_FAILURE);
             }
             assert(ret == 0);
             numBlocks = roundToNextBlock(sbuf.st_size) / SECTOR_SIZE;
