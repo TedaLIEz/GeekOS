@@ -6,6 +6,7 @@
 TARGET_CC := gcc -m32
 AS_GENERAL_OPTS := --32
 LD_GENERAL_OPTS := -m elf_i386
+GENERAL_OPTS := -Wall $(EXTRA_C_OPTS) 
 
 include Makefile.common
 
