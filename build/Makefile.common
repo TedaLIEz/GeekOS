@@ -222,7 +222,7 @@ GENERAL_OPTS := -Werror -Wall $(EXTRA_C_OPTS)
 CC_GENERAL_OPTS ?= $(GENERAL_OPTS) -W -Wwrite-strings -fno-stack-protector -Wno-unused -Wno-unused-parameter
 
 # Flags used for kernel C source files
-CC_KERNEL_OPTS := -g -DGEEKOS -I$(PROJECT_ROOT)/include -DUSE_VM 
+CC_KERNEL_OPTS := -g -DGEEKOS -I$(PROJECT_ROOT)/include -DUSE_VM
 
 # Flags user for kernel assembly files
 NASM_KERNEL_OPTS := -I$(PROJECT_ROOT)/src/geekos/ -f elf $(EXTRA_NASM_OPTS)
@@ -304,7 +304,7 @@ geekos/hdbootsect: $(PROJECT_ROOT)/src/geekos/bootsect.asm $(PROJECT_ROOT)/src/g
 diskc.img : $(USER_PROGS) $(BUILDFAT) geekos/hdbootsect geekos/setup.bin geekos/kernel.bin
 	$(ZEROFILE) $@ 30720
 	$(ZEROFILE) pagefile.bin 10240
-	$(BUILDFAT) -b geekos/hdbootsect $@ geekos/setup.bin geekos/kernel.bin pagefile.bin $(wildcard user/*.txt) $(wildcard ../sound/*.wav) $(USER_PROGS) geekos/hdbootsect -d dirTest -d dirTest/sub1 || rm $@
+	$(BUILDFAT) -b geekos/hdbootsect $@ geekos/setup.bin geekos/kernel.bin pagefile.bin $(wildcard user/*.txt) $(wildcard ../sound/*.wav) $(USER_PROGS) geekos/hdbootsect -d dirTest -d dirTest/sub1 || ( rm $@ ; exit 1 )
 
 # Second hard drive image (10 MB).
 # This will be used for the GeekOS filesystem (GOSFS) image.
@@ -394,7 +394,7 @@ depend.mak :
 # submission is not generally used, since the make submit rule is functional
 submission.zip:
 	make clean
-	cd .. && zip -r build/submission.zip src/*/* include/*/* build/Makefile*
+	cd .. && zip -r build/submission.zip src/*/* include/*/* build/Makefile* scripts
 
 ../submit.jar:
 	cd .. && curl -O http://www.cs.umd.edu/class/fall2010/cmsc330/p4/submit.jar
