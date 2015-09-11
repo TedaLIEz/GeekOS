@@ -46,6 +46,7 @@ static void GPF_Handler(struct Interrupt_State *state) {
         /* KASSERT(false); */
     }
 
+    Enable_Interrupts();        /* Exit will expects interrupts to be enabled. */
     Exit(-1);
 
     /* We will never get here */
