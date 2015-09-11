@@ -40,6 +40,8 @@
 /* New Camelion file system project #5 */
 #define PROJECT_CFS false
 
+#define PROJECT_PERCPU false
+
 #define PROJECT_USER false
 
 // Spring 2014 Project #0
