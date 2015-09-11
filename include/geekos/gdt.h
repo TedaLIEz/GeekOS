@@ -22,7 +22,9 @@ struct Segment_Descriptor;
 
 void Init_GDT(int CPUid);
 struct Segment_Descriptor *Allocate_Segment_Descriptor(void);
-void Free_Segment_Descriptor(struct Segment_Descriptor *desc);
+struct Segment_Descriptor *Allocate_Segment_Descriptor_On_CPU(int cpu);
+void Free_Segment_Descriptor(struct Segment_Descriptor
+                             *descriptor_to_free);
 int Get_Descriptor_Index(struct Segment_Descriptor *desc);
 
 #endif /* GEEKOS_GDT_H */
