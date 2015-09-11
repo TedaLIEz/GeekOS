@@ -114,7 +114,7 @@ void Dump_Interrupt_State(struct Interrupt_State *state) {
         Print("[%s]", u.pfErrorCode.writeFault ? "write" : "read");
         if(u.pfErrorCode.userModeFault)
             Print("[user mode]");
-        Print("[address=%lx]\n", Get_Page_Fault_Address());
+        Print("[address=0x%lx]\n", Get_Page_Fault_Address());
     }
     extern void Hardware_Shutdown();
     extern int submitTesting;
