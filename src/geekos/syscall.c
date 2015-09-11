@@ -718,10 +718,12 @@ static int Sys_Write(struct Interrupt_State *state) {
         Enable_Interrupts();
         void *data_buffer = Malloc(state->edx);
         if(!data_buffer) {
+            Disable_Interrupts();
             return ENOMEM;
         }
         if(!Copy_From_User(data_buffer, state->ecx, state->edx)) {
             Free(data_buffer);
+            Disable_Interrupts();
             return EINVALID;
         }
         bytes_written =
