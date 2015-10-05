@@ -41,6 +41,8 @@ static void GPF_Handler(struct Interrupt_State *state) {
     Dump_Interrupt_State(state);
 
     if((state->ebp & ~0xfff) != (unsigned long)current->stackPage) {
+        /* the following message is OK / informational if it's
+           user code that GPF'd. */
         Print("ebp %x is not on the current kernel stack %p\n",
               state->ebp, current->stackPage);
         /* KASSERT(false); */
