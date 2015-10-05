@@ -398,13 +398,9 @@ static void Update_Cursor(void) {
  * Initialize the screen module.
  */
 void Init_Screen(void) {
-    bool iflag = Begin_Int_Atomic();
-
     s_cons.row = s_cons.col = 0;
     s_cons.currentAttr = DEFAULT_ATTRIBUTE;
     Clear_Screen();
-
-    End_Int_Atomic(iflag);
 }
 
 /*
