@@ -54,9 +54,9 @@ typedef struct {
     uint_t present:1;
     uint_t flags:4;
     uint_t accessed:1;
-    uint_t reserved:1;
+    uint_t dirty:1;             /* only if largePages */
     uint_t largePages:1;
-    uint_t globalPage:1;
+    uint_t globalPage:1;        /* ignored unless largePages */
     uint_t kernelInfo:3;
     uint_t pageTableBaseAddr:20;
 } pde_t;
