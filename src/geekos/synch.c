@@ -186,7 +186,10 @@ void Cond_Wait(struct Condition *cond, struct Mutex *mutex) {
      * is able to wait.  Therefore, this thread will not
      * miss the eventual notification on the condition.
      */
-    Mutex_Unlock_Imp(mutex);
+    Disable_Interrupts();
+    /* ns15, switched to disable interrupts before unlocking the 
+       mutex and waiting on the condition wait queue. */
+    Mutex_Unlock_Imp_Interrupts_Disabled(mutex);
 
     /*
      * Atomically reenable preemption and wait in the condition wait queue.
@@ -195,7 +198,6 @@ void Cond_Wait(struct Condition *cond, struct Mutex *mutex) {
      * to wake up this thread.
      * On wakeup, disable preemption again.
      */
-    Disable_Interrupts();
     Wait(&cond->waitQueue);
     Enable_Interrupts();
 
