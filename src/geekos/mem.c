@@ -506,17 +506,18 @@ void Free_Page(void *pageAddr) {
     ulong_t addr = (ulong_t) pageAddr;
     struct Page *page;
 
-    /* waste of time? */
-    memset(pageAddr, '\0', 4096);
-    // Print("freeing %p because of %lx\n", pageAddr, (ulong_t) __builtin_return_address(0));
-
+    KASSERT0(addr < (g_numPages << 12),
+             "Attempted to free an invalid physical page");
     KASSERT(Is_Page_Multiple(addr));
-
     /* Get the Page object for this page */
     page = Get_Page(addr);
     /* should be impossible to get a bad page. */
     KASSERT0(page,
              "Couldn't find a struct Page * for the given pageAddr");
+
+    /* waste of time? */
+    memset(pageAddr, '\0', 4096);
+    // Print("freeing %p because of %lx\n", pageAddr, (ulong_t) __builtin_return_address(0));
 
     KASSERT0((page->flags & PAGE_ALLOCATED) != 0,
              "Expected Free_Page parameter to have been allocated.");
