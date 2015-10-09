@@ -28,6 +28,8 @@
 #include <geekos/projects.h>
 #include <geekos/smp.h>
 #include <libc/string.h>
+#include <geekos/segment.h>
+#include <geekos/gdt.h>
 
 /*
  * This module contains common functions for implementation of user
@@ -71,6 +73,7 @@ void Detach_User_Context(struct Kernel_Thread *kthread) {
             Destroy_User_Context(old);
         }
         KASSERT(old->refCount >= 0);
+    }
 }
 
 
