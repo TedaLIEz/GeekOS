@@ -108,13 +108,11 @@ extern struct User_Context *Create_User_Context(ulong_t size) {
 
   fail:
     /* We failed; release any allocated memory */
-    Disable_Interrupts();
     if(context != 0) {
         if(context->memory != 0)
             Free(context->memory);
         Free(context);
     }
-    Enable_Interrupts();
 
     return 0;
 }
