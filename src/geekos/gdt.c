@@ -106,6 +106,7 @@ int Get_Descriptor_Index(struct Segment_Descriptor *desc) {
     return ((int)(desc - s_GDT[0]) % NUM_GDT_ENTRIES);  /* ns - maybe */
 }
 
+
 /*
  * Initialize the kernel's GDT.
  */
@@ -139,6 +140,8 @@ void Init_GDT(int cpuid) {
             );
         KASSERT(Get_Descriptor_Index(desc) == (KERNEL_DS >> 3));
 
+        TODO_P(PROJECT_PERCPU,
+               "Allocate a segment descriptor for the per-cpu region for this cpu.");
 
     }
     cpuid = 0;                  /* use the cpu 0 GDT (not per cpu) */

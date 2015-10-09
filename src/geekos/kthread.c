@@ -48,7 +48,6 @@ extern bool Kernel_Is_Locked();
  * Current thread.
  */
 struct Kernel_Thread *g_currentThreads[MAX_CPUS];
-
 /*
  * Boolean flag indicating that we need to choose a new runnable thread.
  * It is checked by the interrupt return code (Handle_Interrupt,
@@ -70,7 +69,7 @@ volatile int g_preemptionDisabled[MAX_CPUS];
  */
 static struct Thread_Queue s_graveyardQueue;
 static struct Mutex s_graveyardMutex;
-static struct Thread_Queue s_reaperWaitQueue
+static struct Thread_Queue s_reaperWaitQueue;
 
 /*
  * Counter for keys that access thread-local data, and an array
@@ -347,6 +346,7 @@ static void Setup_Kernel_Thread(struct Kernel_Thread *kthread,
     Push(kthread, KERNEL_DS);   /* es */
     Push(kthread, 0);           /* fs */
     Push(kthread, 0);           /* gs */
+    TODO_P(PROJECT_PERCPU, "set gs to the per-cpu segment");
 }
 
 /*
@@ -408,6 +408,7 @@ static void Setup_Kernel_Thread(struct Kernel_Thread *kthread,
     Push(kthread, dsSelector);  /* es */
     Push(kthread, dsSelector);  /* fs */
     Push(kthread, dsSelector);  /* gs */
+
     /* allow it to run on any core */
     kthread->affinity = -1;
 }
@@ -578,6 +579,7 @@ void Init_Scheduler(unsigned int cpuID, void *stack) {
      */
     Init_Thread(mainThread, stack, PRIORITY_NORMAL, true);
     g_currentThreads[Get_CPU_ID()] = mainThread;
+    TODO_P(PROJECT_PERCPU, "set the current thread now that we have one");
     Add_To_Back_Of_All_Thread_List(&s_allThreadList, mainThread);
     strcpy(mainThread->threadName, "{Main}");
 
@@ -894,6 +896,7 @@ int Join(struct Kernel_Thread *kthread) {
 struct Kernel_Thread *Lookup_Thread(int pid, int notOwner) {
     struct Kernel_Thread *result = 0;
 
+
     bool iflag = Begin_Int_Atomic();
 
     struct Kernel_Thread *current = get_current_thread(0);      /* interrupts disabled, may use fast */
@@ -917,6 +920,7 @@ struct Kernel_Thread *Lookup_Thread(int pid, int notOwner) {
     Spin_Unlock(&kthreadLock);
 
     End_Int_Atomic(iflag);
+
 
     return result;
 }
