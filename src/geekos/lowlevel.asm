@@ -322,11 +322,12 @@ APIC_ID		equ	0x20
 	Mov_EAX_Current_Thread_PTR
 	mov	[eax], ebx
 %endmacro
-
 %macro Push_Current_Thread_PTR 0
 	Mov_EAX_Current_Thread_PTR
 	push	dword [eax]
 %endmacro
+
+%include "percpu.asm"
 
 ; Common interrupt handling code.
 ; Save registers, call C handler function,
@@ -336,6 +337,8 @@ align 8
 Handle_Interrupt:
 	; Save registers (general purpose and segment)
 	Save_Registers
+
+
 
 	; Ensure that we're using the kernel data segment
 	mov	ax, KERNEL_DS

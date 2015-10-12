@@ -108,6 +108,7 @@ void Main(struct Boot_Info *bootInfo) {
     Init_Screen();
     Init_Mem(bootInfo);
     Init_CRC32();
+    TODO_P(PROJECT_PERCPU, "Initialize PERCPU");
     Init_TSS();
 
     /* by modifying begin_int_atomic to autolock if not locked when interrupts are disabled, 

@@ -52,7 +52,7 @@ __inline__ void Load_Task_Register(void) {
 void Init_TSS(void) {
     int cpu = Get_CPU_ID();
 
-    s_tssDesc[cpu] = Allocate_Segment_Descriptor();
+    s_tssDesc[cpu] = Allocate_Segment_Descriptor_On_CPU(cpu);
     KASSERT(s_tssDesc[cpu] != 0);
 
     memset(&s_theTSS[cpu], '\0', sizeof(struct TSS));

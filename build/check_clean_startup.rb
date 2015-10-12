@@ -29,7 +29,8 @@ elapsed_times = []
   pid = Kernel.fork do 
     $stderr = StringIO.new # try harder to dump it.
     $stdout = StringIO.new
-    Kernel.system('make run %s MEM=16 ARGS=\'-nographic -testInput "multimlc 500 2\\nspawner\\nb ehlo\\nexit\\n"\' 2>&1 > /dev/null' % vars)
+    # Kernel.system('make run %s MEM=16 ARGS=\'-nographic -testInput "multimlc 500 2\\nspawner\\nb ehlo\\nexit\\n"\' 2>&1 > /dev/null' % vars)
+    Kernel.system('make run %s MEM=16 ARGS=\'-nographic -testInput "multimlc 500 2\\nb ehlo\\nexit\\n"\' 2>&1 > /dev/null' % vars)
     exit $?
   end
   begin

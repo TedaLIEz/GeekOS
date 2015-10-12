@@ -79,7 +79,7 @@ struct User_Interrupt_State {
     struct Interrupt_State state;
     uint_t espUser;
     uint_t ssUser;
-}
+};
 
 static __inline__ bool Is_User_Interrupt(struct Interrupt_State *state) {
     return (state->cs & 3) == USER_PRIVILEGE;

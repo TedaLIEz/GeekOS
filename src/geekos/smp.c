@@ -27,6 +27,7 @@
 #include <geekos/mem.h>
 #include <geekos/gdt.h>
 #include <geekos/kassert.h>
+#include <geekos/projects.h>
 
 /*
  * Information on Intel MP spec from:
@@ -502,6 +503,8 @@ void Secondary_Start(int stack) {
 
     Init_GDT(CPUid);
 
+    TODO_P(PROJECT_PERCPU, "Initialize PERCPU");
+
     Init_TSS();
 
     /* by modifying begin_int_atomic to autolock if not
@@ -640,6 +643,7 @@ bool Kernel_Is_Locked(void) {
 
 
 struct Kernel_Thread *get_current_thread(int atomic) {
+    TODO_P(PROJECT_PERCPU, "Replace get_current_thread");
     int i = atomic ? Begin_Int_Atomic() : 0;    /* an interrupt could break us between the cpuid get and the subscript */
     struct Kernel_Thread *ret = g_currentThreads[Get_CPU_ID()];
     if(atomic)

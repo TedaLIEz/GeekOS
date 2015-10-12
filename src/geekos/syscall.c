@@ -291,20 +291,24 @@ static int Sys_Spawn(struct Interrupt_State *state) {
  */
 static int Sys_Wait(struct Interrupt_State *state) {
     int exitCode;
-    struct Kernel_Thread *kthread = Lookup_Thread(state->ebx, 0);
+    struct Kernel_Thread *kthread;
+
+    Enable_Interrupts();
+    kthread = Lookup_Thread(state->ebx, 0);
     if(kthread == 0) {
         // can't find the process id passed
-        return EINVALID;
+        exitCode = EINVALID;
+        goto finish;
     }
 
     if(kthread->detached) {
         // can't wait on a detached process
-        return EINVALID;
+        exitCode = EINVALID;
+        goto finish;
     }
-    Enable_Interrupts();
     exitCode = Join(kthread);
+  finish:
     Disable_Interrupts();
-
     return exitCode;
 }
 
