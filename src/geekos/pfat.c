@@ -872,6 +872,7 @@ static int PFAT_Mount(struct Mount_Point *mountPoint) {
     /* Initialize instance lock and PFAT_File list. */
     Mutex_Init(&instance->lock);
     Clear_PFAT_File_List(&instance->fileList);
+    Spin_Lock_Init(&instance->fileList.lock);   /* ns15 */
 
     /* Attempt to register a paging file */
     PFAT_Register_Paging_File(mountPoint, instance);

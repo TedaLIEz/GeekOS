@@ -128,6 +128,7 @@ void Mutex_Init(struct Mutex *mutex) {
     mutex->state = MUTEX_UNLOCKED;
     mutex->owner = 0;
     Clear_Thread_Queue(&mutex->waitQueue);
+    Spin_Lock_Init(&mutex->waitQueue.lock);     /* ns15 */
 }
 
 /*
