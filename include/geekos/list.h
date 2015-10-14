@@ -54,7 +54,6 @@ struct listTypeName {					\
 #define IMPLEMENT_LIST(LType, NType)								\
 static __inline__ void Clear_##LType(struct LType *listPtr) {					\
     listPtr->head = listPtr->tail = 0;								\
-    listPtr->lock.lock = 0; \
 }												\
 static __inline__ bool Locked_Is_Member_Of_##LType(struct LType *listPtr, struct NType *nodePtr) {	\
     struct NType *cur = listPtr->head;								\
