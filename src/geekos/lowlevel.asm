@@ -271,8 +271,8 @@ align 8
 Set_PDBR:
 	mov	eax, [esp+4]
 	mov	cr3, eax
-	mov	eax, [esp+4]
-	mov	cr3, eax
+	; mov	eax, [esp+4]
+	; mov	cr3, eax
 	ret
 
 ;

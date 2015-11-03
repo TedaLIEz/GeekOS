@@ -84,7 +84,7 @@ void Check_Integrity_Or_Die() {
     if((char *)top < (char *)&top - 0x2000) {
         static int warned;
         if(!warned) {
-            Print("Code Integrity Check is Weak.\n");
+            // Print("Code Integrity Check is Weak.\n");
             Print("Detail: top %p way lower than &top %p.\n", top, &top);
             warned = true;
         }

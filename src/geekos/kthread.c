@@ -119,9 +119,12 @@ static void Init_Thread(struct Kernel_Thread *kthread, void *stackPage,
     kthread->totalTime = 0;
 
     /*
-     * The thread has an implicit self-reference.
-     * If the thread is not detached, then its owner
-     * also has a reference to it so Wait will work.
+     * The thread has an implicit self-reference and 
+     * has a reference from its parent.  
+     * 
+     * In some assignments, "detached" process may not
+     * have a reference from a parent and cannot be 
+     * Wait()ed on.
      */
     kthread->refCount = 2;      /* detached ? 1 : 2; */
     kthread->alive = true;

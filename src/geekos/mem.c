@@ -28,6 +28,7 @@
 #include <geekos/paging.h>
 #include <geekos/mem.h>
 #include <geekos/smp.h>
+#include <geekos/projects.h>
 
 /* ----------------------------------------------------------------------
  * Global data
@@ -373,7 +374,8 @@ static void *Alloc_Or_Reclaim_Page(pte_t * entry, ulong_t vaddr,
 
             KASSERT0(page->flags & PAGE_ALLOCATED,
                      "expected page to be allocated if we're evicting it");
-            page->entry->flags &= ~(VM_WRITE);  /* trap on write attempt, though it can remain present */
+            TODO_P(PROJECT_VIRTUAL_MEMORY_B,
+                   "Consider disabling write permission on this page as it is written out");
 
             /* Write the page to disk. Interrupts are enabled, since the I/O may block. */
             Debug
@@ -394,23 +396,12 @@ static void *Alloc_Or_Reclaim_Page(pte_t * entry, ulong_t vaddr,
         if(page->flags & PAGE_ALLOCATED) {
             /* The page is still in use update its bookeping info */
             /* Update page table to reflect the page being on disk */
-            if(page->entry->flags & VM_WRITE) {
-                /* the page on disk is now stale.  free it.  what a waste. */
-                Free_Space_On_Paging_File(pagefileIndex);
-
-                Unlock_Page(page);
-
-                /* now must retry */
-                Enable_Interrupts();    /* so that we can alloc page, checking the free list. */
-                goto start_over;
-                // KASSERT0(false, "don't handle this yet...");
-            } else {
-                /* page wasn't written to, now it is clean and ours.. */
-                page->entry->present = 0;
-                if(!mappedPage) {
-                    page->entry->kernelInfo = KINFO_PAGE_ON_DISK;
-                    page->entry->pageBaseAddr = pagefileIndex;  /* Remember where it is located! */
-                }
+            TODO_P(PROJECT_VIRTUAL_MEMORY_B,
+                   "Consider testing whether the page has been written since being sent to disk");
+            page->entry->present = 0;
+            if(!mappedPage) {
+                page->entry->kernelInfo = KINFO_PAGE_ON_DISK;
+                page->entry->pageBaseAddr = pagefileIndex;      /* Remember where it is located! */
             }
         } else {
             /* While we were writing got notification this page isn't even needed anymore */
