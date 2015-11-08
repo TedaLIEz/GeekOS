@@ -9,10 +9,14 @@
 
 #include <geekos/errno.h>
 #include <geekos/kassert.h>
+#ifndef KASSERT0
+#define KASSERT0(expr, message) KASSERT(expr)
+#endif
 #include <geekos/mem.h>
 #include <geekos/malloc.h>
 #include <geekos/blockdev.h>
 #include <geekos/bufcache.h>
+#include <geekos/screen.h>
 #include <string.h>
 
 /*
@@ -25,7 +29,7 @@
  * ---------------------------------------------------------------------- */
 
 int bufCacheDebug = 0;
-#define Debug(args...) if (bufCacheDebug) Print(args)
+#define Debug(args...) if (bufCacheDebug) Print("bufcache: " args)
 
 /* XXX */
 int noEvict = 0;
@@ -115,8 +119,8 @@ static int Get_Buffer(struct FS_Buffer_Cache *cache,
             Debug("Found cached block %lu\n", fsBlockNum);
             /* If buffer is in use, wait until it is available. */
             while (buf->flags & FS_BUFFER_INUSE) {
-                Debug("Waiting for in-use cached block %lu\n",
-                      fsBlockNum);
+                Debug("Waiting for in-use cached block %lu, RA=%lx\n",
+                      fsBlockNum, (ulong_t) __builtin_return_address(0));
                 Cond_Wait(&cache->cond, &cache->mutex);
             }
             goto done;
@@ -309,6 +313,9 @@ int Get_FS_Buffer(struct FS_Buffer_Cache *cache, ulong_t fsBlockNum,
              "Null FS_Buffer_Cache passed to Get_FS_Buffer.");
     KASSERT0(pBuf != NULL,
              "Null FS_Buffer pointer address passed to Get_FS_Buffer.");
+
+    Debug("Getting FS use cached block %lu, RA=%lx\n", fsBlockNum,
+          (ulong_t) __builtin_return_address(0));
 
     Mutex_Lock(&cache->mutex);
     rc = Get_Buffer(cache, fsBlockNum, pBuf);

@@ -93,7 +93,7 @@ void Detach_User_Context(struct Kernel_Thread *kthread) {
  */
 int Spawn(const char *program, const char *command,
           struct Kernel_Thread **pThread, bool background) {
-    int rc;
+    int rc = 0, rc2 = 0, rc3 = 0;
     char *exeFileData = 0;
     ulong_t exeFileLength;
     struct User_Context *userContext = 0;
@@ -107,13 +107,14 @@ int Spawn(const char *program, const char *command,
 
     if((rc =
         Read_Fully(program, (void **)&exeFileData, &exeFileLength)) != 0
-       || (rc =
+       || (rc2 =
            Parse_ELF_Executable(exeFileData, exeFileLength,
                                 &exeFormat)) != 0 ||
-       (rc =
+       (rc3 =
         Load_User_Program(exeFileData, exeFileLength, &exeFormat, command,
-                          &userContext)) != 0)
+                          &userContext)) != 0) {
         goto fail;
+    }
 
     /*
      * User program has been loaded, so we can free the

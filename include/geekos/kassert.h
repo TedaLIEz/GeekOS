@@ -45,6 +45,7 @@ do {							\
 } while (0)
 #endif
 
+#ifndef KASSERT0
 #define KASSERT0(cond, message)         \
 do {							\
     if (!(cond)) {					\
@@ -58,7 +59,7 @@ do {							\
 	   ; 						\
     }							\
 } while (0)
-
+#endif
 
 #define TODO(message)					\
 do {							\

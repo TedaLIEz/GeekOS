@@ -37,6 +37,7 @@ void Echo(bool enable);
 void Read_Line(char *buf, size_t bufSize);
 const char *Get_Error_String(int errno);
 
+#ifndef assert
 #define assert(exp)						\
 do {								\
     if (!(exp)) {						\
@@ -47,5 +48,7 @@ do {								\
 	Exit(1);						\
     }								\
 } while (0)
+#endif
+
 
 #endif /* CONIO_H */

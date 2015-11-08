@@ -111,7 +111,10 @@ setup_32:
 	mov	ax, [(SETUPSEG<<4)+mem_size_kbytes]
 	push	eax		; memSizeKB
 
-	push	dword 20	; bootInfoSize
+	mov	eax, (INITSEG<<4)
+	push	eax		; startKernInfo
+
+	push	dword 24	; bootInfoSize
 
 	; Pass pointer to Boot_Info struct as argument to kernel
 	; entry point.

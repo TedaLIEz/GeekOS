@@ -15,7 +15,7 @@
 #include <geekos/blockdev.h>
 #include <geekos/bitset.h>
 
-#define Debug
+#define Debug(x...)
 // #define Debug(x...) printf(x)
 
 struct gfs2_superblock the_super;

@@ -26,7 +26,7 @@ DISP_OPTION = $(shell $(PROJECT_ROOT)/scripts/display_opt)
 
 run: all gdbinit
 	echo $(NO_DISPLAY)
-	$(QEMU) $(DISP_OPTION) diskc.img $(GDB_OPT) $(ARGS)
+	$(QEMU) $(DISP_OPTION) diskc.img -hdb disk3d.img $(GDB_OPT) $(ARGS)
 
 # build an ISO CD-rom image
 iso: all 
@@ -43,7 +43,7 @@ dbgcd : all
 	$(QEMU) -s -S -boot d -cdrom cd.iso
 
 dbgrun : all gdbinit
-	$(QEMU) $(DISP_OPTION) -no-fd-bootchk -m 3 -S $(GDB_OPT) diskc.img $(ARGS)
+	$(QEMU) $(DISP_OPTION) -no-fd-bootchk -m 3 -S $(GDB_OPT) diskc.img -hdb disk3d.img $(ARGS)
 
 dbg : all
 	gdb geekos/kernel.exe

@@ -19,6 +19,7 @@
 #include <process.h>
 #include <fileio.h>
 #include <string.h>
+#include <geekos/errno.h>
 #include <geekos/projects.h>
 
 int doTest(const char *testName, int (*testFunction) (), int points,
@@ -60,13 +61,19 @@ int ttestFormat() {
 }
 
 int ttestMount() {
-    if(PROJECT_CFS) {
-        return Mount("ide1", "/d", "cfs");
-    } else if(PROJECT_GFS2) {
-        return Mount("ide1", "/d", "gfs2");
-    } else {
-        return Mount("ide1", "/d", "gosfs");
+    int rc;
+    rc = Mount("ide1", "/d", "gfs3");
+    /* ns15 partially fixed to chain. dislike the preprocessor switches. */
+    if(rc == ENOFILESYS) {
+        if(PROJECT_CFS) {
+            return Mount("ide1", "/d", "cfs");
+        } else if(PROJECT_GFS2) {
+            return Mount("ide1", "/d", "gfs2");
+        } else {
+            return Mount("ide1", "/d", "gosfs");
+        }
     }
+    return rc;
 }
 
 int tOpenInexistentFile() {
@@ -77,8 +84,10 @@ int tCreat() {
     int retC;
 
     int fd = Open("/d/somefile", O_CREATE | O_READ);
-    if(fd < 0)
+    if(fd < 0) {
+        Print("failed to creat: %d", fd);
         return -1;
+    }
 
     retC = Close(fd);
 
@@ -426,25 +435,25 @@ int tReadEntry() {
 
     retC = Create_Directory("/d/basic11d");
     if(retC < 0) {
-        Print("couldn't create basic11d: %d\n", retC);
+        Print("tReadEntry: couldn't create basic11d: %d\n", retC);
         return -1;
     }
 
     retC = Create_Directory("/d/basic11d/d1");
     if(retC < 0) {
-        Print("couldn't create basic11d/d1: %d\n", retC);
+        Print("tReadEntry: couldn't create basic11d/d1: %d\n", retC);
         return -1;
     }
 
     retC = Create_Directory("/d/basic11d/d2");
     if(retC < 0) {
-        Print("couldn't create basic11d/d2: %d\n", retC);
+        Print("tReadEntry: couldn't create basic11d/d2: %d\n", retC);
         return -1;
     }
 
     fd = Open("/d/basic11d/f1", O_CREATE);
     if(fd < 0) {
-        Print("couldn't create basic11d/f1: %d\n", fd);
+        Print("tReadEntry: couldn't create basic11d/f1: %d\n", fd);
         return -1;
     }
 
@@ -452,7 +461,7 @@ int tReadEntry() {
 
     fd = Open_Directory("/d/basic11d");
     if(fd < 0) {
-        Print("couldn't opendir basic11d: %d\n", fd);
+        Print("tReadEntry: couldn't opendir basic11d: %d\n", fd);
         return -1;
     }
 
@@ -462,39 +471,60 @@ int tReadEntry() {
 
     if((retR < 0) ||
        (strncmp(dirEntry.name, "d1", 2) != 0) ||
-       (!dirEntry.stats.isDirectory))
+       (!dirEntry.stats.isDirectory)) {
+        Print("tReadEntry: expected directory d1, found %s %s\n",
+              dirEntry.stats.isDirectory ? "directory" : "file",
+              dirEntry.name);
         return -1;
+    }
 
     retR = Read_Entry(fd, &dirEntry);
 
     if((retR < 0) ||
        (strncmp(dirEntry.name, "d2", 2) != 0) ||
-       (!dirEntry.stats.isDirectory))
+       (!dirEntry.stats.isDirectory)) {
+        Print("tReadEntry: expected directory d2, found %s %s\n",
+              dirEntry.stats.isDirectory ? "directory" : "file",
+              dirEntry.name);
         return -1;
+    }
 
     retR = Read_Entry(fd, &dirEntry);
 
     if((retR < 0) ||
        (strncmp(dirEntry.name, "f1", 2) != 0) ||
-       (dirEntry.stats.isDirectory))
+       (dirEntry.stats.isDirectory)) {
+        Print("tReadEntry: expected file f1, found %s %s\n",
+              dirEntry.stats.isDirectory ? "directory" : "file",
+              dirEntry.name);
         return -1;
+    }
 
     Close(fd);
 
     fd = Open_Directory("/d/basic11d");
-    if(fd < 0)
+    if(fd < 0) {
+        Print("tReadEntry: failed to open directory again\n");
         return -1;
-
+    }
+#ifdef TESTED_FILESYSTEM_SUPPORTS_SEEK_DIR
     retR = Seek(fd, 2);
-    if(retR < 0)
+    if(retR < 0) {
+        Print("tReadEntry: failed to seek in directory: %d\n", retR);
         return -1;
+    }
 
     retR = Read_Entry(fd, &dirEntry);
 
     if((retR < 0) ||
        (strncmp(dirEntry.name, "f1", 2) != 0) ||
-       (dirEntry.stats.isDirectory))
+       (dirEntry.stats.isDirectory)) {
+        Print("tReadEntry: expected after seek file f1, found %s %s\n",
+              dirEntry.stats.isDirectory ? "directory" : "file",
+              dirEntry.name);
         return -1;
+    }
+#endif
 
     Close(fd);
     Delete("/d/basic11d/d1", false);

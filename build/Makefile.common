@@ -71,7 +71,7 @@ KERNEL_C_SRCS := idt.c int.c trap.c irq.c io.c \
 	$(notdir $(wildcard $(VPATH)/geekos/paging.c)) \
 	$(notdir $(wildcard $(VPATH)/geekos/sem.c)) \
 	$(notdir $(wildcard $(VPATH)/geekos/gosfs.c)) \
-	$(notdir $(wildcard $(VPATH)/geekos/gfs2.c)) \
+	$(notdir $(wildcard $(VPATH)/geekos/gfs3.c)) \
 	$(notdir $(wildcard $(VPATH)/geekos/cfs.c)) \
 	$(notdir $(wildcard $(VPATH)/geekos/percpu.c)) \
 	$(addprefix net/, $(notdir $(wildcard $(VPATH)/geekos/net/*.c))) \
@@ -311,6 +311,19 @@ diskc.img : $(USER_PROGS) $(BUILDFAT) geekos/hdbootsect geekos/setup.bin geekos/
 diskd.img :
 	$(ZEROFILE) $@ 20480
 
+disk3.img : $(USER_PROGS) tools/gfs3f geekos/hdbootsect geekos/setup.bin geekos/kernel.bin
+	rm -f $@
+	$(ZEROFILE) pagefile.bin 10240
+	tools/gfs3f $@ geekos/hdbootsect 30720 geekos/setup.bin geekos/kernel.bin pagefile.bin $(wildcard user/*.txt) $(wildcard ../sound/*.wav) $(USER_PROGS) -d dirTest -d dirTest/sub1 || ( rm $@ ; exit 1 )
+
+disk3d.img : $(USER_PROGS) tools/gfs3f 
+	rm -f $@
+	tools/gfs3f $@ geekos/hdbootsect 30720 || ( rm $@ ; exit 1 )
+
+disk3d-small.img : $(USER_PROGS) tools/gfs3f 
+	rm -f $@
+	tools/gfs3f $@ geekos/hdbootsect 1024 || ( rm $@ ; exit 1 )
+
 # Tool to build PFAT filesystem images
 $(BUILDFAT) : $(PROJECT_ROOT)/src/tools/buildFat.c $(PROJECT_ROOT)/include/geekos/pfat.h
 	$(HOST_CC) -g $(CC_GENERAL_OPTS) -I$(PROJECT_ROOT)/include $(PROJECT_ROOT)/src/tools/buildFat.c -o $@
@@ -341,7 +354,7 @@ geekos/kernel.bin : geekos/kernel.exe
 	$(PAD) $@ 512
 
 # The kernel executable and symbol map.
-geekos/kernel.exe : $(KERNEL_OBJS) $(COMMON_KERNEL_C_OBJS)
+geekos/kernel.exe : $(KERNEL_OBJS) $(COMMON_KERNEL_C_OBJS) Makefile.common
 	$(TARGET_LD) $(LD_GENERAL_OPTS) -o geekos/kernel.exe -Ttext $(KERNEL_BASE_ADDR) -e $(KERNEL_ENTRY) \
 		$(KERNEL_OBJS) $(COMMON_KERNEL_C_OBJS)
 	$(TARGET_NM) geekos/kernel.exe > geekos/kernel.syms
@@ -410,6 +423,11 @@ gfs-%.img: tools/gfs2f
 
 tools/gfs2f: $(PROJECT_ROOT)/src/tools/gfs2f.c $(PROJECT_ROOT)/include/geekos/gfs2.h $(PROJECT_ROOT)/src/geekos/bitset.c $(PROJECT_ROOT)/src/tools/fake-blockdev.c
 	$(HOST_CC) $(CC_GENERAL_OPTS) -I$(PROJECT_ROOT)/include  $(PROJECT_ROOT)/src/geekos/bitset.c   $(PROJECT_ROOT)/src/tools/gfs2f.c $(PROJECT_ROOT)/src/tools/fake-blockdev.c -o $@ -lm
+
+GFS3F_CFLAGS:=$(CFLAGS) -I../../include -Wall -O0 -Wshadow -Wwrite-strings -Wuninitialized -g -DGEEKOS -DREDEFINE_KASSERT -DGEEKOS_KASSERT_H -DLock_List="(void)" -DUnlock_List="(void)" -DKASSERT=assert -include assert.h -Wno-unused-function
+
+tools/gfs3f: $(PROJECT_ROOT)/src/tools/gfs3f.c $(PROJECT_ROOT)/include/geekos/gfs3.h $(PROJECT_ROOT)/src/geekos/bufcache.c $(PROJECT_ROOT)/src/geekos/bitset.c $(PROJECT_ROOT)/src/tools/fake-blockdev.c
+	$(HOST_CC) -g $(GFS3F_CFLAGS) -I$(PROJECT_ROOT)/include  $(PROJECT_ROOT)/src/geekos/gfs3.c $(PROJECT_ROOT)/src/geekos/bufcache.c $(PROJECT_ROOT)/src/geekos/bitset.c   $(PROJECT_ROOT)/src/tools/gfs3f.c $(PROJECT_ROOT)/src/tools/fake-blockdev.c -o $@ -lm
 
 # intentionally not .gdbinit so that the dependency is updated.
 .PHONY: gdbinit

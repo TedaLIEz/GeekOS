@@ -33,6 +33,8 @@
 #define PROJECT_FS false
 /* neil's version of project 5 */
 #define PROJECT_GFS2 false
+/* neil's second version of project 5 */
+#define PROJECT_GFS3 false
 /* sound driver */
 #define PROJECT_SOUND false
 /* Jeff's traditional project #5 */
@@ -72,7 +74,7 @@
 
 #ifndef TODO
 #ifdef GEEKOS
-#warning "projects.h file requires geekos/screen.h to be included first in kernel source files"
+#warning "projects.h file requires geekos/screen.h to be included first in kernel source files to define TODO"
 #else
 #include <conio.h>
 #define TODO(x) Print(x)

@@ -27,6 +27,7 @@ struct MemRegion {
 
 struct Boot_Info {
     int bootInfoSize;           /* size of this struct; for versioning */
+    int startKernInfo;          /* address of lowest kernel info (before 0xa0000) */
     int memSizeKB;              /* number of KB, as reported by int 15h  = zero mean user regions */
     int bootDrive;              /* 0,1 floppy 0x80-81 hard disks */
     int numMemRegions;          /* number of mem segments */

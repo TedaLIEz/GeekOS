@@ -166,12 +166,26 @@ void Init_Mem(struct Boot_Info *bootInfo) {
     kernEnd = Round_Up_To_Page((int)&end);
     g_numPages = numPages;
 
+    /* would be clearly bad: */
+    KASSERT(kernEnd < ISA_HOLE_START);
+
+    /* encroaches the EBDA: */
+    KASSERT0(kernEnd < 0x9c000,
+             "kernel encroaches EBDA; reduce code or globals.");
+
     /*
      * The initial kernel thread and its stack are placed
      * just beyond the ISA hole.
      */
     KASSERT(ISA_HOLE_END == KERN_THREAD_OBJ);
     KASSERT(KERN_STACK == KERN_THREAD_OBJ + PAGE_SIZE);
+
+    /* make sure BSS ends before our first structure */
+    // extern char BSS_END, INITSEG;
+    Print("BSS = %x\n", (int)&BSS_END);
+    Print("start kern info = %x\n", bootInfo->startKernInfo);
+    KASSERT0(((int)&BSS_END) < bootInfo->startKernInfo,
+             "end of kernel BSS segment is after the start of, need a smaller kernel");
 
     /*
      * Memory looks like this:

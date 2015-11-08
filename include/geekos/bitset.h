@@ -24,8 +24,8 @@ void *Create_Bit_Set(uint_t totalBits);
 void Set_Bit(void *bitSet, uint_t bitPos);
 void Clear_Bit(void *bitSet, uint_t bitPos);
 bool Is_Bit_Set(void *bitSet, uint_t bitPos);
-int Find_First_Free_Bit(void *bitSet, ulong_t totalBits);
-int Find_First_N_Free(void *bitSet, uint_t runLength, ulong_t totalBits);
+int Find_First_Free_Bit(void *bitSet, ulong_t totalBits);       /* -1 if not found */
+int Find_First_N_Free(void *bitSet, uint_t runLength, ulong_t totalBits);       /* -1 if not found */
 void Destroy_Bit_Set(void *bitSet);
 
 #if 0

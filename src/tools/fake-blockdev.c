@@ -14,17 +14,14 @@
 #define GEEKOS
 #endif
 
+#define KASSERT0(expr,msg) assert(expr)
+/* void KASSERT(int expr); * fake */
+
 #include <geekos/screen.h>
 #include <geekos/synch.h>
 #include <geekos/vfs.h>
 
-
-int Get_CPU_ID(void) {
-    return 0;
-}
-struct Kernel_Thread *get_current_thread(int a __attribute__ ((unused))) {
-    return (struct Kernel_Thread *)0x1000;
-}
+int submitTesting;
 
 void *Alloc_Page() {
     return malloc(4096);
@@ -46,7 +43,7 @@ void Print(const char *fmt, ...) {
     va_end(args);
 }
 
-struct Kernel_Thread *g_currentThreads[] = { NULL, NULL, NULL, NULL };
+struct Kernel_Thread *g_currentThread = NULL;
 
 void Set_Current_Attr(unsigned char attr __attribute__ ((unused))) {
     /* noop */
@@ -61,17 +58,15 @@ void Set_Current_Attr(unsigned char attr __attribute__ ((unused))) {
 
 void Mutex_Init(struct Mutex *mutex) {
     mutex->state = MUTEX_UNLOCKED;
-    mutex->owner = (struct Kernel_Thread *)g_currentThreads[0];
+    mutex->owner = (struct Kernel_Thread *)get_current_thread(0);
 }
 void Mutex_Lock(struct Mutex *mutex) {
     KASSERT(mutex->state == MUTEX_UNLOCKED);
     mutex->state = MUTEX_LOCKED;
-    KASSERT(mutex->owner == (struct Kernel_Thread *)g_currentThreads[0]);
 }
 void Mutex_Unlock(struct Mutex *mutex) {
     KASSERT(mutex->state == MUTEX_LOCKED);
     mutex->state = MUTEX_UNLOCKED;
-    KASSERT(mutex->owner == (struct Kernel_Thread *)g_currentThreads[0]);
 }
 
 // struct Condition {
@@ -91,6 +86,29 @@ void Cond_Signal(struct Condition *cond) {
 void Cond_Broadcast(struct Condition *cond) {
     (void)cond;
 }
+
+#undef KASSERT0
+void KASSERT0(int expr, const char *message) {
+    if(!expr)
+        Print("%s", message);
+    assert(expr);
+}
+void Exit(int code) {
+    printf("terminating %d\n", code);
+    exit(code);
+}
+
+// void KASSERT(int expr) {
+//   assert(expr);
+// }
+struct Kernel_Thread *get_current_thread(int atomic
+                                         __attribute__ ((unused))) {
+    return (void *)0x1000;
+}
+void Hardware_Shutdown(void) {
+    exit(EXIT_FAILURE);
+}
+
 
 int device_fd;
 /* not actually using mmap, just extra complexity for no fun. */
@@ -125,7 +143,7 @@ int Block_Write(struct Block_Device *dev __attribute__ ((unused)),
     // setup_device_mmap();
 
     lseek(device_fd, block_index * SECTOR_SIZE, SEEK_SET);
-    write(device_fd, block_data, SECTOR_SIZE);
+    assert(write(device_fd, block_data, SECTOR_SIZE) > 0);
     // memcpy( device_mmap + block_index * SECTOR_SIZE, block_data, SECTOR_SIZE );
     return 0;
 }
@@ -139,7 +157,7 @@ int Block_Read(struct Block_Device *dev __attribute__ ((unused)),
     // setup_device_mmap();
     // memcpy( block_data, device_mmap + block_index * SECTOR_SIZE, SECTOR_SIZE );
     lseek(device_fd, block_index * SECTOR_SIZE, SEEK_SET);
-    read(device_fd, block_data, SECTOR_SIZE);
+    assert(read(device_fd, block_data, SECTOR_SIZE) > 0);
     return 0;
 
 }
@@ -161,16 +179,11 @@ struct File *Allocate_File(struct File_Ops *ops, int filePos, int endPos,
     return ret;
 }
 
-struct Filesystem_Ops *gfs2_ops;
+struct Filesystem_Ops *gfs_ops;
 
 bool Register_Filesystem(const char *fsName
                          __attribute__ ((unused)),
                          struct Filesystem_Ops *fsOps) {
-    gfs2_ops = fsOps;
+    gfs_ops = fsOps;
     return 1;
-}
-
-int submitTesting;
-
-void Hardware_Shutdown(void) {
 }

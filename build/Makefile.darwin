@@ -32,11 +32,11 @@ include Makefile.common
 # for sound output to file:
 #	env QEMU_WAV_FREQUENCY=22050 QEMU_AUDIO_DRV=wav $(QEMU) -soundhw sb16 -m 10 -std-vga diskc.img
 
-run : all gdbinit
-	$(QEMU) $(MEM_OPT) diskc.img $(GDB_OPT) $(ARGS) || true
+run : all gdbinit diskc.img 
+	$(QEMU) $(MEM_OPT) diskc.img -hdb gfs3-5Mp.img $(GDB_OPT) $(ARGS) -testInput "gfs3tst prep\n" || true
 
-dbgrun : all gdbinit
-	$(QEMU) $(MEM_OPT) -S diskc.img $(GDB_OPT) $(ARGS) || true
+dbgrun : all gdbinit diskc.img 
+	$(QEMU) $(MEM_OPT) -S diskc.img -hdb gfs3-5Mp.img $(GDB_OPT) $(ARGS) || true
 
 dbg : all
 	$(TARGET_CC_PREFIX)gdb geekos/kernel.exe
