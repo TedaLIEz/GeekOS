@@ -1,4 +1,5 @@
-# -*- Makefile -*-
+#
+#-*- Makefile -*-
 # Makefile for GeekOS kernel, userspace, and tools
 # Copyright (c) 2004,2005 David H. Hovemeyer <daveho@cs.umd.edu>
 # $Revision: 1.47 $
@@ -121,6 +122,8 @@ GENERATED_LIBC_SRCS := libc/errno.c
 
 
 # User program source files.
+# notdir: find the last orrurance of /
+# wildcard:list all the pattern, here it will contain all the .c in $(VPATH)/user
 #USER_C_SRCS := \
 #	null.c long.c \
 #	shell.c b.c c.c
@@ -311,7 +314,8 @@ diskc.img : $(USER_PROGS) $(BUILDFAT) geekos/hdbootsect geekos/setup.bin geekos/
 diskd.img :
 	$(ZEROFILE) $@ 20480
 
-disk3.img : $(USER_PROGS) tools/gfs3f geekos/hdbootsect geekos/setup.bin geekos/kernel.bin
+disk3d.img : $(USER_PROGS) tools/gfs3f geekos/hdbootsect geekos/setup.bin geekos/kernel.bin
+# Some bug here?	
 	rm -f $@
 	$(ZEROFILE) pagefile.bin 10240
 	tools/gfs3f $@ geekos/hdbootsect 30720 geekos/setup.bin geekos/kernel.bin pagefile.bin $(wildcard user/*.txt) $(wildcard ../sound/*.wav) $(USER_PROGS) -d dirTest -d dirTest/sub1 || ( rm $@ ; exit 1 )
