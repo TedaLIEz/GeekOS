@@ -22,8 +22,8 @@ int main(int argc, char **argv) {
     int read_fd, write_fd;
     int read_bytes, written_bytes, pipe_retval;
     char buf[256];
-
-    /* Print("calling pipe"); */
+    //printf("Starting test\n");
+    Print("calling pipe");
     pipe_retval = Pipe(&read_fd, &write_fd);
     assert(pipe_retval == 0);
 
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
         written_bytes = Write(write_fd, "beep", 4);
         assert(written_bytes == 4);
         read_bytes = Read(read_fd, buf, 256);
-        /* Print("read %d bytes\n", read_bytes); */
+        Print("read %d bytes\n", read_bytes);
         assert(read_bytes == 4);
         assert(strncmp(buf, "beep", 4) == 0);
     }
@@ -47,6 +47,5 @@ int main(int argc, char **argv) {
     assert(written_bytes <= -1);
     read_bytes = Read(read_fd, buf, 256);
     assert(read_bytes <= -1);
-
     return 0;
 }

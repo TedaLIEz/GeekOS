@@ -906,7 +906,14 @@ static int Sys_PlaySoundFile(struct Interrupt_State *state) {
  *   state->ecx - address of file descriptor for the write side
  */
 static int Sys_Pipe(struct Interrupt_State *state) {
+//    Print("Call system call!");
+    Enable_Interrupts();
+    void *data_buffer;
+    data_buffer = Malloc(sizeof(struct File));
+//  Pipe_Create(NULL, NULL);
+    //TODO: Using Pipe_Create to create pipe.
     TODO_P(PROJECT_PIPE, "Pipe system call");
+    Disable_Interrupts();
     return EUNSUPPORTED;
 }
 

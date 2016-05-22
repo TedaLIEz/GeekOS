@@ -45,7 +45,7 @@ dbgcd : all
 	$(QEMU) -s -S -boot d -cdrom cd.iso
 
 dbgrun : all gdbinit
-	$(QEMU) $(DISP_OPTION) -no-fd-bootchk -m 3 -S $(GDB_OPT) diskc.img -hdb disk3d.img $(ARGS)
+	$(QEMU) $(DISP_OPTION) -no-fd-bootchk -m 3 -S $(GDB_OPT) diskc.img -hdb diskd.img $(ARGS)
 
 dbg : all
 	gdb geekos/kernel.exe

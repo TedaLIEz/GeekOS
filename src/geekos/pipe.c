@@ -16,15 +16,27 @@
 #include <geekos/errno.h>
 #include <geekos/projects.h>
 #include <geekos/int.h>
-
-
 struct File_Ops Pipe_Read_Ops =
     { NULL, Pipe_Read, NULL, NULL, Pipe_Close, NULL };
 struct File_Ops Pipe_Write_Ops =
     { NULL, NULL, Pipe_Write, NULL, Pipe_Close, NULL };
 
+struct pipe {
+    ulong_t reader_count;
+    ulong_t writer_count;
+    char buffer[32 * 1024];
+};
+typedef struct pipe PIPE;
+PIPE *pipe;
 int Pipe_Create(struct File **read_file, struct File **write_file) {
+    pipe = (PIPE *)Malloc(sizeof(PIPE));
+    (*pipe).reader_count++;
+    (*pipe).writer_count++;
+    strncpy((*pipe).buffer, "demo buffer", 32 * 1024);
+    Print("reader_value:%lu", (*pipe).reader_count);
+    Print("buffer: %s", (*pipe).buffer);
     TODO_P(PROJECT_PIPE, "Create a pipe");
+    TODO_P(PROJECT_PIPE, "test");
     return EUNSUPPORTED;
 }
 
