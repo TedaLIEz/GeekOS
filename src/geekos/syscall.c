@@ -5,34 +5,38 @@
  *
  * All rights reserved.
  *
- * This code may not be resdistributed without the permission of the copyright holders.
- * Any student solutions using any of this code base constitute derviced work and may
- * not be redistributed in any form.  This includes (but is not limited to) posting on
- * public forums or web sites, providing copies to (past, present, or future) students
- * enrolled in similar operating systems courses the University of Maryland's CMSC412 course.
+ * This code may not be resdistributed without the permission of the copyright
+ * holders.
+ * Any student solutions using any of this code base constitute derviced work
+ * and may
+ * not be redistributed in any form.  This includes (but is not limited to)
+ * posting on
+ * public forums or web sites, providing copies to (past, present, or future)
+ * students
+ * enrolled in similar operating systems courses the University of Maryland's
+ * CMSC412 course.
  *
  */
-
-#include <geekos/syscall.h>
-#include <geekos/errno.h>
-#include <geekos/kthread.h>
 #include <geekos/int.h>
 #include <geekos/elf.h>
-#include <geekos/malloc.h>
-#include <geekos/screen.h>
+#include <geekos/errno.h>
 #include <geekos/keyboard.h>
-#include <geekos/string.h>
-#include <geekos/user.h>
-#include <geekos/timer.h>
-#include <geekos/vfs.h>
-#include <geekos/signal.h>
-#include <geekos/sem.h>
+#include <geekos/kthread.h>
+#include <geekos/malloc.h>
 #include <geekos/projects.h>
+#include <geekos/screen.h>
+#include <geekos/sem.h>
+#include <geekos/signal.h>
+#include <geekos/string.h>
+#include <geekos/syscall.h>
+#include <geekos/timer.h>
+#include <geekos/user.h>
+#include <geekos/vfs.h>
 
-#include <geekos/sys_net.h>
-#include <geekos/pipe.h>
 #include <geekos/mem.h>
+#include <geekos/pipe.h>
 #include <geekos/smp.h>
+#include <geekos/sys_net.h>
 
 extern Spin_Lock_t kthreadLock;
 
@@ -41,40 +45,40 @@ extern Spin_Lock_t kthreadLock;
  * copy it into kernel space.
  * Interrupts must be disabled.
  */
-/* "extern" to note that it's used by semaphore and networking system calls, defined 
+/* "extern" to note that it's used by semaphore and networking system calls,
+   defined
    in another file */
-/* need not be called with interrupts disabled, since it should move data from 
+/* need not be called with interrupts disabled, since it should move data from
    user space (which is blocked in the kernel) into a newly-allocated buffer */
 extern int Copy_User_String(ulong_t uaddr, ulong_t len, ulong_t maxLen,
                             char **pStr) {
-    int rc = 0;
-    char *str;
+  int rc = 0;
+  char *str;
 
+  /* Ensure that string isn't too long. */
+  if (len > maxLen)
+    return EINVALID;
 
-    /* Ensure that string isn't too long. */
-    if(len > maxLen)
-        return EINVALID;
+  /* Allocate space for the string. */
+  str = (char *)Malloc(len + 1);
+  if (str == 0) {
+    rc = ENOMEM;
+    goto done;
+  }
 
-    /* Allocate space for the string. */
-    str = (char *)Malloc(len + 1);
-    if(str == 0) {
-        rc = ENOMEM;
-        goto done;
-    }
+  /* Copy data from user space. */
+  if (!Copy_From_User(str, uaddr, len)) {
+    rc = EINVALID;
+    Free(str);
+    goto done;
+  }
+  str[len] = '\0';
 
-    /* Copy data from user space. */
-    if(!Copy_From_User(str, uaddr, len)) {
-        rc = EINVALID;
-        Free(str);
-        goto done;
-    }
-    str[len] = '\0';
+  /* Success! */
+  *pStr = str;
 
-    /* Success! */
-    *pStr = str;
-
-  done:
-    return rc;
+done:
+  return rc;
 }
 
 /*
@@ -87,9 +91,8 @@ extern int Copy_User_String(ulong_t uaddr, ulong_t len, ulong_t maxLen,
  * Returns:
  *   always returns the value 0 (zero)
  */
-static int Sys_Null(struct Interrupt_State *state
-                    __attribute__ ((unused))) {
-    return 0;
+static int Sys_Null(struct Interrupt_State *state __attribute__((unused))) {
+  return 0;
 }
 
 /*
@@ -101,9 +104,9 @@ static int Sys_Null(struct Interrupt_State *state
  *   Never returns to user mode!
  */
 static int Sys_Exit(struct Interrupt_State *state) {
-    Enable_Interrupts();        /* ns14 */
-    Exit(state->ebx);
-    /* We will never get here. */
+  Enable_Interrupts(); /* ns14 */
+  Exit(state->ebx);
+  /* We will never get here. */
 }
 
 /*
@@ -111,16 +114,15 @@ static int Sys_Exit(struct Interrupt_State *state) {
 ** Normaly not within a user's powers,
 ** but it helps automate testing
 */
-extern void Hardware_Shutdown();        /* is in keyboard.c for odd reasons */
+extern void Hardware_Shutdown(); /* is in keyboard.c for odd reasons */
 static int Sys_ShutDown(struct Interrupt_State *state) {
-    Print("------------------- THE END ------------------\n");
-    Hardware_Shutdown();
-    /* We will never get here. */
-    return 0;
+  Print("------------------- THE END ------------------\n");
+  Hardware_Shutdown();
+  /* We will never get here. */
+  return 0;
 }
 
 static Spin_Lock_t sprintLock;
-
 
 /*
  * Print a string to the console.
@@ -130,50 +132,47 @@ static Spin_Lock_t sprintLock;
  * Returns: 0 if successful, -1 if not
  */
 static int Sys_PrintString(struct Interrupt_State *state) {
-    int rc = 0;
-    uint_t length = state->ecx;
-    char *buf = 0;
+  int rc = 0;
+  uint_t length = state->ecx;
+  char *buf = 0;
 
-    //    unlockKernel();
-    Enable_Interrupts();
+  //    unlockKernel();
+  Enable_Interrupts();
 
-    if(length > 0) {
-        /* Copy string into kernel. */
-        if((rc =
-            Copy_User_String(state->ebx, length, 1023,
-                             (char **)&buf)) != 0)
-            goto done;
+  if (length > 0) {
+    /* Copy string into kernel. */
+    if ((rc = Copy_User_String(state->ebx, length, 1023, (char **)&buf)) != 0)
+      goto done;
 
-        /* in reality, one wouldn't abort on this sort of thing.  but we do that
-           just in case it helps track down a bug that much sooner */
-        /* length is greater than zero, so someone thought there was a string here,
-           but the first character is null, so they were either wrong or something 
-           poor occurred. */
-        if(!buf[0]) {
-            Dump_Interrupt_State(state);
-            KASSERT0(buf[0],
-                     "Attempted to print a null string; this is likely a memory error.");
-        }
-
-        TODO_P(PROJECT_SERIAL,
-               "Print to the serial console if appropriate");
-
-        /* Write to console; only one may write. */
-        Spin_Lock(&sprintLock);
-        Put_Buf(buf, length);
-        Spin_Unlock(&sprintLock);
-
+    /* in reality, one wouldn't abort on this sort of thing.  but we do that
+       just in case it helps track down a bug that much sooner */
+    /* length is greater than zero, so someone thought there was a string here,
+       but the first character is null, so they were either wrong or something
+       poor occurred. */
+    if (!buf[0]) {
+      Dump_Interrupt_State(state);
+      KASSERT0(
+          buf[0],
+          "Attempted to print a null string; this is likely a memory error.");
     }
 
-  done:
-    if(buf != 0)
-        Free(buf);
+    TODO_P(PROJECT_SERIAL, "Print to the serial console if appropriate");
 
-    /* somehow, ends up being locked here */
-    // lockKernel();
-    Disable_Interrupts();
+    /* Write to console; only one may write. */
+    Spin_Lock(&sprintLock);
+    Put_Buf(buf, length);
+    Spin_Unlock(&sprintLock);
+  }
 
-    return rc;
+done:
+  if (buf != 0)
+    Free(buf);
+
+  /* somehow, ends up being locked here */
+  // lockKernel();
+  Disable_Interrupts();
+
+  return rc;
 }
 
 /*
@@ -185,10 +184,9 @@ static int Sys_PrintString(struct Interrupt_State *state) {
  *          -1 if this is a background process
  */
 static int Sys_GetKey(struct Interrupt_State *state) {
-    TODO_P(PROJECT_SERIAL,
-           "Get a key from the serial console if appropriate");
+  TODO_P(PROJECT_SERIAL, "Get a key from the serial console if appropriate");
 
-    return Wait_For_Key();
+  return Wait_For_Key();
 }
 
 /*
@@ -198,8 +196,8 @@ static int Sys_GetKey(struct Interrupt_State *state) {
  * Returns: always returns 0
  */
 static int Sys_SetAttr(struct Interrupt_State *state) {
-    Set_Current_Attr((uchar_t) state->ebx);
-    return 0;
+  Set_Current_Attr((uchar_t)state->ebx);
+  return 0;
 }
 
 /*
@@ -210,16 +208,16 @@ static int Sys_SetAttr(struct Interrupt_State *state) {
  * Returns: 0 if successful, -1 otherwise
  */
 static int Sys_GetCursor(struct Interrupt_State *state) {
-    int row, col, ret;
-    TODO_P(PROJECT_SERIAL, "fail if invoked when serial port is in use.");
-    Get_Cursor(&row, &col);
-    if(!Copy_To_User(state->ebx, &row, sizeof(int)) ||
-       !Copy_To_User(state->ecx, &col, sizeof(int))) {
-        ret = -1;
-    } else {
-        ret = 0;
-    }
-    return ret;
+  int row, col, ret;
+  TODO_P(PROJECT_SERIAL, "fail if invoked when serial port is in use.");
+  Get_Cursor(&row, &col);
+  if (!Copy_To_User(state->ebx, &row, sizeof(int)) ||
+      !Copy_To_User(state->ecx, &col, sizeof(int))) {
+    ret = -1;
+  } else {
+    ret = 0;
+  }
+  return ret;
 }
 
 /*
@@ -230,8 +228,8 @@ static int Sys_GetCursor(struct Interrupt_State *state) {
  * Returns: 0 if successful, -1 otherwise
  */
 static int Sys_PutCursor(struct Interrupt_State *state) {
-    TODO_P(PROJECT_SERIAL, "fail if serial.");
-    return Put_Cursor(state->ebx, state->ecx) ? 0 : -1;
+  TODO_P(PROJECT_SERIAL, "fail if serial.");
+  return Put_Cursor(state->ebx, state->ecx) ? 0 : -1;
 }
 
 /*
@@ -241,45 +239,44 @@ static int Sys_PutCursor(struct Interrupt_State *state) {
  *   state->ecx - length of executable name
  *   state->edx - user address of command string
  *   state->esi - length of command string
- *   state->edi == whether to spawn "detached" without a parent and without access to keys
+ *   state->edi == whether to spawn "detached" without a parent and without
+ * access to keys
  * Returns: pid of process if successful, error code (< 0) otherwise
  */
 static int Sys_Spawn(struct Interrupt_State *state) {
-    int rc;
-    char *program = 0;
-    char *command = 0;
-    struct Kernel_Thread *process = NULL;
+  int rc;
+  char *program = 0;
+  char *command = 0;
+  struct Kernel_Thread *process = NULL;
 
-    Enable_Interrupts();
+  Enable_Interrupts();
 
-    /* Copy program name and command from user space. */
-    if((rc =
-        Copy_User_String(state->ebx, state->ecx, VFS_MAX_PATH_LEN,
-                         &program)) != 0 ||
-       (rc =
-        Copy_User_String(state->edx, state->esi, 1023, &command)) != 0)
-        goto done;
+  /* Copy program name and command from user space. */
+  if ((rc = Copy_User_String(state->ebx, state->ecx, VFS_MAX_PATH_LEN,
+                             &program)) != 0 ||
+      (rc = Copy_User_String(state->edx, state->esi, 1023, &command)) != 0)
+    goto done;
 
-    /*
-     * Now that we have collected the program name and command string
-     * from user space, we can try to actually spawn the process.
-     */
-    rc = Spawn(program, command, &process, state->edi);
+  /*
+   * Now that we have collected the program name and command string
+   * from user space, we can try to actually spawn the process.
+   */
+  rc = Spawn(program, command, &process, state->edi);
 
-    if(rc == 0) {
-        KASSERT(process != 0);
-        rc = process->pid;
-    }
+  if (rc == 0) {
+    KASSERT(process != 0);
+    rc = process->pid;
+  }
 
-  done:
-    if(program != 0)
-        Free(program);
-    if(command != 0)
-        Free(command);
+done:
+  if (program != 0)
+    Free(program);
+  if (command != 0)
+    Free(command);
 
-    Disable_Interrupts();
+  Disable_Interrupts();
 
-    return rc;
+  return rc;
 }
 
 /*
@@ -290,26 +287,26 @@ static int Sys_Spawn(struct Interrupt_State *state) {
  *   or error code (< 0) on error
  */
 static int Sys_Wait(struct Interrupt_State *state) {
-    int exitCode;
-    struct Kernel_Thread *kthread;
+  int exitCode;
+  struct Kernel_Thread *kthread;
 
-    Enable_Interrupts();
-    kthread = Lookup_Thread(state->ebx, 0);
-    if(kthread == 0) {
-        // can't find the process id passed
-        exitCode = EINVALID;
-        goto finish;
-    }
+  Enable_Interrupts();
+  kthread = Lookup_Thread(state->ebx, 0);
+  if (kthread == 0) {
+    // can't find the process id passed
+    exitCode = EINVALID;
+    goto finish;
+  }
 
-    if(kthread->detached) {
-        // can't wait on a detached process
-        exitCode = EINVALID;
-        goto finish;
-    }
-    exitCode = Join(kthread);
-  finish:
-    Disable_Interrupts();
-    return exitCode;
+  if (kthread->detached) {
+    // can't wait on a detached process
+    exitCode = EINVALID;
+    goto finish;
+  }
+  exitCode = Join(kthread);
+finish:
+  Disable_Interrupts();
+  return exitCode;
 }
 
 /*
@@ -319,13 +316,11 @@ static int Sys_Wait(struct Interrupt_State *state) {
  * Returns: the pid of the current thread
  */
 static int Sys_GetPID(struct Interrupt_State *state) {
-    return CURRENT_THREAD->pid;
+  return CURRENT_THREAD->pid;
 }
-
 
 extern struct All_Thread_List s_allThreadList;
 extern struct Thread_Queue s_runQueue;
-
 
 /*
  * Get information about the running processes
@@ -338,10 +333,9 @@ extern struct Thread_Queue s_runQueue;
  *          N the number of entries in the table, on success
  */
 static int Sys_PS(struct Interrupt_State *state) {
-    TODO_P(PROJECT_BACKGROUND_JOBS, "Sys_PS system call");
-    return 0;
+  TODO_P(PROJECT_BACKGROUND_JOBS, "Sys_PS system call");
+  return 0;
 }
-
 
 /*
  * Send a signal to a process
@@ -351,8 +345,8 @@ static int Sys_PS(struct Interrupt_State *state) {
  * Returns: 0 on success or error code (< 0) on error
  */
 static int Sys_Kill(struct Interrupt_State *state) {
-    TODO_P(PROJECT_SIGNALS, "Sys_Kill system call");
-    return 0;
+  TODO_P(PROJECT_SIGNALS, "Sys_Kill system call");
+  return 0;
 }
 
 /*
@@ -363,8 +357,8 @@ static int Sys_Kill(struct Interrupt_State *state) {
  * Returns: 0 on success or error code (< 0) on error
  */
 static int Sys_Signal(struct Interrupt_State *state) {
-    TODO_P(PROJECT_SIGNALS, "Sys_Signal system call");
-    return 0;
+  TODO_P(PROJECT_SIGNALS, "Sys_Signal system call");
+  return 0;
 }
 
 /*
@@ -379,8 +373,8 @@ static int Sys_Signal(struct Interrupt_State *state) {
  * Returns: 0 on success or error code (< 0) on error
  */
 static int Sys_RegDeliver(struct Interrupt_State *state) {
-    return 0;
-    TODO_P(PROJECT_SIGNALS, "Sys_RegDeliver system call");
+  return 0;
+  TODO_P(PROJECT_SIGNALS, "Sys_RegDeliver system call");
 }
 
 /*
@@ -391,8 +385,8 @@ static int Sys_RegDeliver(struct Interrupt_State *state) {
  * Returns: not expected to "return"
  */
 static int Sys_ReturnSignal(struct Interrupt_State *state) {
-    TODO_P(PROJECT_SIGNALS, "Sys_ReturnSignal system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_SIGNALS, "Sys_ReturnSignal system call");
+  return EUNSUPPORTED;
 }
 
 /*
@@ -402,8 +396,8 @@ static int Sys_ReturnSignal(struct Interrupt_State *state) {
  * Returns: pid of reaped process on success, -1 on error.
  */
 static int Sys_WaitNoPID(struct Interrupt_State *state) {
-    TODO_P(PROJECT_SIGNALS, "Sys_WaitNoPID system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_SIGNALS, "Sys_WaitNoPID system call");
+  return EUNSUPPORTED;
 }
 
 /*
@@ -414,8 +408,8 @@ static int Sys_WaitNoPID(struct Interrupt_State *state) {
  * Returns: 0 if successful, -1 otherwise
  */
 static int Sys_SetSchedulingPolicy(struct Interrupt_State *state) {
-    TODO_P(PROJECT_SCHEDULING, "SetSchedulingPolicy system call");
-    return 0;
+  TODO_P(PROJECT_SCHEDULING, "SetSchedulingPolicy system call");
+  return 0;
 }
 
 /*
@@ -426,8 +420,8 @@ static int Sys_SetSchedulingPolicy(struct Interrupt_State *state) {
  * Returns: value of the g_numTicks global variable
  */
 static int Sys_GetTimeOfDay(struct Interrupt_State *state
-                            __attribute__ ((unused))) {
-    return g_numTicks;
+                            __attribute__((unused))) {
+  return g_numTicks;
 }
 
 /*
@@ -441,74 +435,70 @@ static int Sys_GetTimeOfDay(struct Interrupt_State *state
  *   0 if successful, error code if unsuccessful
  */
 static int Sys_Mount(struct Interrupt_State *state) {
-    int rc = 0;
-    struct VFS_Mount_Request *args = 0;
+  int rc = 0;
+  struct VFS_Mount_Request *args = 0;
 
+  /* Allocate space for VFS_Mount_Request struct. */
+  if ((args = (struct VFS_Mount_Request *)Malloc(
+           sizeof(struct VFS_Mount_Request))) == 0) {
+    rc = ENOMEM;
+    goto done;
+  }
 
-    /* Allocate space for VFS_Mount_Request struct. */
-    if((args =
-        (struct VFS_Mount_Request *)
-        Malloc(sizeof(struct VFS_Mount_Request))) == 0) {
-        rc = ENOMEM;
-        goto done;
-    }
+  /* Copy the mount arguments structure from user space. */
+  if (!Copy_From_User(args, state->ebx, sizeof(struct VFS_Mount_Request))) {
+    rc = EINVALID;
+    goto done;
+  }
 
-    /* Copy the mount arguments structure from user space. */
-    if(!Copy_From_User
-       (args, state->ebx, sizeof(struct VFS_Mount_Request))) {
-        rc = EINVALID;
-        goto done;
-    }
-
-    /*
-     * Hint: use devname, prefix, and fstype from the args structure
-     * and invoke the Mount() VFS function.  You will need to check
-     * to make sure they are correctly nul-terminated.
-     */
-    TODO_P(PROJECT_FS, "Mount system call");
-    rc = EUNSUPPORTED;
-  done:
-    if(args != 0)
-        Free(args);
-    return rc;
+  /*
+   * Hint: use devname, prefix, and fstype from the args structure
+   * and invoke the Mount() VFS function.  You will need to check
+   * to make sure they are correctly nul-terminated.
+   */
+  TODO_P(PROJECT_FS, "Mount system call");
+  rc = EUNSUPPORTED;
+done:
+  if (args != 0)
+    Free(args);
+  return rc;
 }
 
-static int get_path_from_registers(uint_t addr, uint_t length,
-                                   char **pPath) {
-    if(length > 1024) {
-        return ENAMETOOLONG;
-    }
-    *pPath = Malloc(length + 1);
-    if(!*pPath) {
-        return ENOMEM;
-    }
-    if(!Copy_From_User(*pPath, addr, length)) {
-        Free(*pPath);
-        return EINVALID;
-    }
-    (*pPath)[length] = '\0';
-    return 0;
+static int get_path_from_registers(uint_t addr, uint_t length, char **pPath) {
+  if (length > 1024) {
+    return ENAMETOOLONG;
+  }
+  *pPath = Malloc(length + 1);
+  if (!*pPath) {
+    return ENOMEM;
+  }
+  if (!Copy_From_User(*pPath, addr, length)) {
+    Free(*pPath);
+    return EINVALID;
+  }
+  (*pPath)[length] = '\0';
+  return 0;
 }
 
 static int next_descriptor() {
-    int descriptor;
-    for(descriptor = 0;
-        descriptor < USER_MAX_FILES &&
-        CURRENT_THREAD->userContext->file_descriptor_table[descriptor] !=
-        0; descriptor++) ;
-    if(descriptor == USER_MAX_FILES) {
-        return EMFILE;
-    }
-    return descriptor;
+  int descriptor;
+  for (descriptor = 0;
+       descriptor < USER_MAX_FILES &&
+       CURRENT_THREAD->userContext->file_descriptor_table[descriptor] != 0;
+       descriptor++)
+    ;
+  if (descriptor == USER_MAX_FILES) {
+    return EMFILE;
+  }
+  return descriptor;
 }
 
 static int add_file_to_descriptor_table(struct File *file) {
-    int descriptor = next_descriptor();
-    if(descriptor >= 0) {
-        CURRENT_THREAD->userContext->file_descriptor_table[descriptor] =
-            file;
-    }
-    return descriptor;
+  int descriptor = next_descriptor();
+  if (descriptor >= 0) {
+    CURRENT_THREAD->userContext->file_descriptor_table[descriptor] = file;
+  }
+  return descriptor;
 }
 
 /*
@@ -522,33 +512,33 @@ static int add_file_to_descriptor_table(struct File *file) {
  *   or an error code (< 0) if unsuccessful
  */
 static int Sys_Open(struct Interrupt_State *state) {
-    char *path;
-    struct File *file;
-    int rc = 0;
+  char *path;
+  struct File *file;
+  int rc = 0;
 
-    Enable_Interrupts();
+  Enable_Interrupts();
 
-    rc = get_path_from_registers(state->ebx, state->ecx, &path);
-    if(rc != 0) {
-        goto leave;
-    }
+  rc = get_path_from_registers(state->ebx, state->ecx, &path);
+  if (rc != 0) {
+    goto leave;
+  }
 
-    rc = next_descriptor();
-    if(rc < 0) {
-        Free(path);
-        goto leave;
-    }
-
-    rc = Open(path, state->edx, &file);
+  rc = next_descriptor();
+  if (rc < 0) {
     Free(path);
+    goto leave;
+  }
 
-  leave:
-    Disable_Interrupts();
-    if(rc >= 0) {
-        return add_file_to_descriptor_table(file);
-    } else {
-        return rc;
-    }
+  rc = Open(path, state->edx, &file);
+  Free(path);
+
+leave:
+  Disable_Interrupts();
+  if (rc >= 0) {
+    return add_file_to_descriptor_table(file);
+  } else {
+    return rc;
+  }
 }
 
 /*
@@ -561,8 +551,8 @@ static int Sys_Open(struct Interrupt_State *state) {
  *   or an error code (< 0) if unsuccessful
  */
 static int Sys_OpenDirectory(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "Open directory system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "Open directory system call");
+  return EUNSUPPORTED;
 }
 
 /*
@@ -572,23 +562,21 @@ static int Sys_OpenDirectory(struct Interrupt_State *state) {
  * Returns: 0 if successful, or an error code (< 0) if unsuccessful
  */
 static int Sys_Close(struct Interrupt_State *state) {
-    /* where is the file table? */
-    if(state->ebx > USER_MAX_FILES) {
-        Print("unable to close fd index %d, out of range.\n", state->ebx);
-        return EINVALID;
-    }
-    if(CURRENT_THREAD->userContext->file_descriptor_table[state->ebx]) {
-        Enable_Interrupts();
-        Close(CURRENT_THREAD->userContext->
-              file_descriptor_table[state->ebx]);
-        Disable_Interrupts();
-        CURRENT_THREAD->userContext->file_descriptor_table[state->ebx] =
-            0;
-        return 0;
-    } else {
-        // Print("unable to close fd index %d, nothing there.\n", state->ebx);
-        return ENOTFOUND;
-    }
+  /* where is the file table? */
+  if (state->ebx > USER_MAX_FILES) {
+    Print("unable to close fd index %d, out of range.\n", state->ebx);
+    return EINVALID;
+  }
+  if (CURRENT_THREAD->userContext->file_descriptor_table[state->ebx]) {
+    Enable_Interrupts();
+    Close(CURRENT_THREAD->userContext->file_descriptor_table[state->ebx]);
+    Disable_Interrupts();
+    CURRENT_THREAD->userContext->file_descriptor_table[state->ebx] = 0;
+    return 0;
+  } else {
+    // Print("unable to close fd index %d, nothing there.\n", state->ebx);
+    return ENOTFOUND;
+  }
 }
 
 /*
@@ -601,53 +589,53 @@ static int Sys_Close(struct Interrupt_State *state) {
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_Delete(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "Delete system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "Delete system call");
+  return EUNSUPPORTED;
 }
 
 /*
  * Rename a file.
  * Params:
- *   state->ebx - address of user string containing old path 
+ *   state->ebx - address of user string containing old path
  *   state->ecx - length of old path
- *   state->edx - address of user string containing new path 
+ *   state->edx - address of user string containing new path
  *   state->esix - length of new path
  *
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_Rename(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "Rename system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "Rename system call");
+  return EUNSUPPORTED;
 }
 
 /*
  * Link a file.
  * Params:
- *   state->ebx - address of user string containing old path 
+ *   state->ebx - address of user string containing old path
  *   state->ecx - length of old path
- *   state->edx - address of user string containing new path 
+ *   state->edx - address of user string containing new path
  *   state->esix - length of new path
  *
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_Link(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "Link system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "Link system call");
+  return EUNSUPPORTED;
 }
 
 /*
  * Link a file.
  * Params:
- *   state->ebx - address of user string containing old path 
+ *   state->ebx - address of user string containing old path
  *   state->ecx - length of old path
- *   state->edx - address of user string containing new path 
+ *   state->edx - address of user string containing new path
  *   state->esix - length of new path
  *
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_SymLink(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "Link system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "Link system call");
+  return EUNSUPPORTED;
 }
 
 /*
@@ -661,33 +649,32 @@ static int Sys_SymLink(struct Interrupt_State *state) {
  *   or error code (< 0) on error
  */
 static int Sys_Read(struct Interrupt_State *state) {
-    int bytes_read = 0;
-    /* where is the file table? */
-    if(state->ebx > USER_MAX_FILES) {
-        return EINVALID;
+  int bytes_read = 0;
+  /* where is the file table? */
+  if (state->ebx > USER_MAX_FILES) {
+    return EINVALID;
+  }
+  if (CURRENT_THREAD->userContext->file_descriptor_table[state->ebx]) {
+    void *data_buffer;
+    Enable_Interrupts();
+    data_buffer = Malloc(state->edx);
+    if (!data_buffer) {
+      return ENOMEM;
     }
-    if(CURRENT_THREAD->userContext->file_descriptor_table[state->ebx]) {
-        void *data_buffer;
-        Enable_Interrupts();
-        data_buffer = Malloc(state->edx);
-        if(!data_buffer) {
-            return ENOMEM;
-        }
-        bytes_read =
-            Read(CURRENT_THREAD->userContext->
-                 file_descriptor_table[state->ebx], data_buffer,
-                 state->edx);
-        if(bytes_read > 0) {
-            if(!Copy_To_User(state->ecx, data_buffer, bytes_read)) {
-                bytes_read = EINVALID;
-            }
-        }
-        Free(data_buffer);
-        Disable_Interrupts();
-        return bytes_read;
-    } else {
-        return ENOTFOUND;
+    bytes_read =
+        Read(CURRENT_THREAD->userContext->file_descriptor_table[state->ebx],
+             data_buffer, state->edx);
+    if (bytes_read > 0) {
+      if (!Copy_To_User(state->ecx, data_buffer, bytes_read)) {
+        bytes_read = EINVALID;
+      }
     }
+    Free(data_buffer);
+    Disable_Interrupts();
+    return bytes_read;
+  } else {
+    return ENOTFOUND;
+  }
 }
 
 /*
@@ -698,8 +685,8 @@ static int Sys_Read(struct Interrupt_State *state) {
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_ReadEntry(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "ReadEntry system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "ReadEntry system call");
+  return EUNSUPPORTED;
 }
 
 /*
@@ -713,33 +700,32 @@ static int Sys_ReadEntry(struct Interrupt_State *state) {
  *   or error code (< 0) on error
  */
 static int Sys_Write(struct Interrupt_State *state) {
-    int bytes_written = 0;
-    /* where is the file table? */
-    if(state->ebx > USER_MAX_FILES) {
-        return EINVALID;
+  int bytes_written = 0;
+  /* where is the file table? */
+  if (state->ebx > USER_MAX_FILES) {
+    return EINVALID;
+  }
+  if (CURRENT_THREAD->userContext->file_descriptor_table[state->ebx]) {
+    Enable_Interrupts();
+    void *data_buffer = Malloc(state->edx);
+    if (!data_buffer) {
+      Disable_Interrupts();
+      return ENOMEM;
     }
-    if(CURRENT_THREAD->userContext->file_descriptor_table[state->ebx]) {
-        Enable_Interrupts();
-        void *data_buffer = Malloc(state->edx);
-        if(!data_buffer) {
-            Disable_Interrupts();
-            return ENOMEM;
-        }
-        if(!Copy_From_User(data_buffer, state->ecx, state->edx)) {
-            Free(data_buffer);
-            Disable_Interrupts();
-            return EINVALID;
-        }
-        bytes_written =
-            Write(CURRENT_THREAD->userContext->
-                  file_descriptor_table[state->ebx], data_buffer,
-                  state->edx);
-        Free(data_buffer);
-        Disable_Interrupts();
-        return bytes_written;
-    } else {
-        return ENOTFOUND;
+    if (!Copy_From_User(data_buffer, state->ecx, state->edx)) {
+      Free(data_buffer);
+      Disable_Interrupts();
+      return EINVALID;
     }
+    bytes_written =
+        Write(CURRENT_THREAD->userContext->file_descriptor_table[state->ebx],
+              data_buffer, state->edx);
+    Free(data_buffer);
+    Disable_Interrupts();
+    return bytes_written;
+  } else {
+    return ENOTFOUND;
+  }
 }
 
 /*
@@ -747,26 +733,28 @@ static int Sys_Write(struct Interrupt_State *state) {
  * Params:
  *   state->ebx - address of user string containing path of file
  *   state->ecx - length of path
- *   state->edx - user address of struct VFS_File_Stat object to store metadata in
+ *   state->edx - user address of struct VFS_File_Stat object to store metadata
+ * in
  *
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_Stat(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "Stat system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "Stat system call");
+  return EUNSUPPORTED;
 }
 
 /*
  * Get metadata of an open file.
  * Params:
  *   state->ebx - file descriptor to get metadata for
- *   state->ecx - user address of struct VFS_File_Stat object to store metadata in
+ *   state->ecx - user address of struct VFS_File_Stat object to store metadata
+ * in
  *
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_FStat(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "FStat system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "FStat system call");
+  return EUNSUPPORTED;
 }
 
 /*
@@ -778,8 +766,8 @@ static int Sys_FStat(struct Interrupt_State *state) {
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_Seek(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "Seek system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "Seek system call");
+  return EUNSUPPORTED;
 }
 
 /*
@@ -791,8 +779,8 @@ static int Sys_Seek(struct Interrupt_State *state) {
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_CreateDir(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "CreateDir system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "CreateDir system call");
+  return EUNSUPPORTED;
 }
 
 /*
@@ -801,8 +789,8 @@ static int Sys_CreateDir(struct Interrupt_State *state) {
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_Sync(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "Sync system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "Sync system call");
+  return EUNSUPPORTED;
 }
 
 /*
@@ -810,34 +798,32 @@ static int Sys_Sync(struct Interrupt_State *state) {
  * Params:
  *   state->ebx - address of user string containing device to format
  *   state->ecx - length of device name string
- *   state->edx - address of user string containing filesystem type 
+ *   state->edx - address of user string containing filesystem type
  *   state->esi - length of filesystem type string
 
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_Format(struct Interrupt_State *state) {
-    int rc = 0;
-    char *devname = 0, *fstype = 0;
+  int rc = 0;
+  char *devname = 0, *fstype = 0;
 
-    Enable_Interrupts();
+  Enable_Interrupts();
 
-    if((rc =
-        Copy_User_String(state->ebx, state->ecx, BLOCKDEV_MAX_NAME_LEN,
-                         &devname)) != 0 ||
-       (rc =
-        Copy_User_String(state->edx, state->esi, VFS_MAX_FS_NAME_LEN,
-                         &fstype)) != 0)
-        goto done;
+  if ((rc = Copy_User_String(state->ebx, state->ecx, BLOCKDEV_MAX_NAME_LEN,
+                             &devname)) != 0 ||
+      (rc = Copy_User_String(state->edx, state->esi, VFS_MAX_FS_NAME_LEN,
+                             &fstype)) != 0)
+    goto done;
 
-    rc = Format(devname, fstype);
+  rc = Format(devname, fstype);
 
-  done:
-    if(devname != 0)
-        Free(devname);
-    if(fstype != 0)
-        Free(fstype);
-    Disable_Interrupts();
-    return rc;
+done:
+  if (devname != 0)
+    Free(devname);
+  if (fstype != 0)
+    Free(fstype);
+  Disable_Interrupts();
+  return rc;
 }
 
 /*
@@ -852,8 +838,8 @@ static int Sys_Format(struct Interrupt_State *state) {
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_ReadBlock(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "ReadBlock system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "ReadBlock system call");
+  return EUNSUPPORTED;
 }
 
 /*
@@ -868,63 +854,75 @@ static int Sys_ReadBlock(struct Interrupt_State *state) {
  * Returns: 0 if successful, error code (< 0) if unsuccessful
  */
 static int Sys_WriteBlock(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FS, "WriteBlock system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FS, "WriteBlock system call");
+  return EUNSUPPORTED;
 }
 
-
 static int Sys_GetUid(struct Interrupt_State *state) {
-    TODO_P(PROJECT_USER, "Sys_GetUid system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_USER, "Sys_GetUid system call");
+  return EUNSUPPORTED;
 }
 
 static int Sys_SetSetUid(struct Interrupt_State *state) {
-    TODO_P(PROJECT_USER, "Sys_SetSetUid system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_USER, "Sys_SetSetUid system call");
+  return EUNSUPPORTED;
 }
 
 static int Sys_SetEffectiveUid(struct Interrupt_State *state) {
-    TODO_P(PROJECT_USER, "Sys_SetEffectiveUid system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_USER, "Sys_SetEffectiveUid system call");
+  return EUNSUPPORTED;
 }
 
 static int Sys_SetAcl(struct Interrupt_State *state) {
-    TODO_P(PROJECT_USER, "Sys_SetAcl system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_USER, "Sys_SetAcl system call");
+  return EUNSUPPORTED;
 }
 
 extern void SB16_Play_File(const char *filename);
 static int Sys_PlaySoundFile(struct Interrupt_State *state) {
-    TODO_P(PROJECT_SOUND, "PlaySoundFile system call");
-    return 0;
+  TODO_P(PROJECT_SOUND, "PlaySoundFile system call");
+  return 0;
 }
 
-/* 
+/*
  * Create a pipe.
  * Params:
  *   state->ebx - address of file descriptor for the read side
  *   state->ecx - address of file descriptor for the write side
  */
 static int Sys_Pipe(struct Interrupt_State *state) {
-//    Print("Call system call!");
-    Enable_Interrupts();
-    void *data_buffer;
-    data_buffer = Malloc(sizeof(struct File));
-//  Pipe_Create(NULL, NULL);
-    //TODO: Using Pipe_Create to create pipe.
-    TODO_P(PROJECT_PIPE, "Pipe system call");
-    Disable_Interrupts();
-    return EUNSUPPORTED;
+  struct File *read, *write;
+  int read_id, write_id;
+  int rc;
+  rc = next_descriptor();
+  Enable_Interrupts();
+  if (rc < 0)
+    return EMFILE;
+  read_id = rc;
+  for (rc = 0; rc < USER_MAX_FILES; rc++) {
+    if (CURRENT_THREAD->userContext->file_descriptor_table[rc] == 0 &&
+        rc != read_id) {
+      break;
+    }
+  }
+  write_id = rc;
+  Pipe_Create(&read, &write);
+  read_id = add_file_to_descriptor_table(read);
+  write_id = add_file_to_descriptor_table(write);
+  Copy_To_User(state->ebx, &read_id, sizeof(read_id));
+  Copy_To_User(state->ecx, &write_id, sizeof(write_id));
+  // TODO: Using Pipe_Create to create pipe.
+  // TODO_P(PROJECT_PIPE, "Pipe system call");
+  Disable_Interrupts();
+  return 0;
 }
-
-
 
 static int Sys_Fork(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FORK, "Fork system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FORK, "Fork system call");
+  return EUNSUPPORTED;
 }
 
-/* 
+/*
  * Exec a new program in this process.
  * Params:
  *   state->ebx - user address of name of executable
@@ -934,25 +932,25 @@ static int Sys_Fork(struct Interrupt_State *state) {
  * Returns: doesn't if successful, error code (< 0) otherwise
  */
 static int Sys_Execl(struct Interrupt_State *state) {
-    TODO_P(PROJECT_FORK, "Execl system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_FORK, "Execl system call");
+  return EUNSUPPORTED;
 }
 
-/* 
- * The following is a crude trigger for dumping kernel 
+/*
+ * The following is a crude trigger for dumping kernel
  * statistics to the console output.  It is not generally
  * how one should output kernel statistics to user space.
  */
 
 static int Sys_Diagnostic(struct Interrupt_State *state) {
-    (void)state;                /* warning appeasement */
-    Enable_Interrupts();
-    Dump_Blockdev_Stats();
-    Disable_Interrupts();
-    return 0;
+  (void)state; /* warning appeasement */
+  Enable_Interrupts();
+  Dump_Blockdev_Stats();
+  Disable_Interrupts();
+  return 0;
 }
 
-/* 
+/*
  * Retrieve disk properties
  * Params:
  *   state->ebx - path name to mounted file system
@@ -962,21 +960,21 @@ static int Sys_Diagnostic(struct Interrupt_State *state) {
  * Returns: doesn't if successful, error code (< 0) otherwise
  */
 static int Sys_Disk_Properties(struct Interrupt_State *state) {
-    char *path;
-    unsigned int block_size, blocks_per_disk;
-    int rc;
-    Enable_Interrupts();
-    Copy_User_String(state->ebx, state->ecx, 100, &path);
-    rc = Disk_Properties(path, &block_size, &blocks_per_disk);
-    if(rc == 0) {
-        Copy_To_User(state->edx, &block_size, sizeof(unsigned int));
-        Copy_To_User(state->esi, &blocks_per_disk, sizeof(unsigned int));
-    }
-    Disable_Interrupts();
-    return 0;
+  char *path;
+  unsigned int block_size, blocks_per_disk;
+  int rc;
+  Enable_Interrupts();
+  Copy_User_String(state->ebx, state->ecx, 100, &path);
+  rc = Disk_Properties(path, &block_size, &blocks_per_disk);
+  if (rc == 0) {
+    Copy_To_User(state->edx, &block_size, sizeof(unsigned int));
+    Copy_To_User(state->esi, &blocks_per_disk, sizeof(unsigned int));
+  }
+  Disable_Interrupts();
+  return 0;
 }
 
-/* 
+/*
  * Set Resource Limits
  * Params:
  *   state->ebx - resource to limit
@@ -984,151 +982,88 @@ static int Sys_Disk_Properties(struct Interrupt_State *state) {
  * Returns: doesn't if successful, error code (< 0) otherwise
  */
 static int Sys_Limit(struct Interrupt_State *state) {
-    TODO_P(PROJECT_LIMIT, "Limit system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_LIMIT, "Limit system call");
+  return EUNSUPPORTED;
 }
 
 static int Sys_Set_Affinity(struct Interrupt_State *state) {
-    return EUNSUPPORTED;
+  return EUNSUPPORTED;
 }
 
 static int Sys_Get_Affinity(struct Interrupt_State *state) {
-    return EUNSUPPORTED;
+  return EUNSUPPORTED;
 }
 
 /*
  * Sys_Clone - create a new LWP, shares text and heap with parent
  *
  * Params:
- *   state->ebx - address of thread function to run 
- *   state->ecx - address of top of child's stack 
+ *   state->ebx - address of thread function to run
+ *   state->ecx - address of top of child's stack
  * Returns: pid for child on sucess or EINVALID for error
  */
 static int Sys_Clone(struct Interrupt_State *state) {
-    TODO_P(PROJECT_CLONE, "Clone system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_CLONE, "Clone system call");
+  return EUNSUPPORTED;
 }
 
 static int Sys_Mmap(struct Interrupt_State *state) {
-    TODO_P(PROJECT_MMAP, "Mmap system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_MMAP, "Mmap system call");
+  return EUNSUPPORTED;
 }
 
 static int Sys_Munmap(struct Interrupt_State *state) {
-    extern int Munmap_Impl(void *);
+  extern int Munmap_Impl(void *);
 
-    TODO_P(PROJECT_MMAP, "Munmap system call");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_MMAP, "Munmap system call");
+  return EUNSUPPORTED;
 }
 
 static int Sys_Alarm(struct Interrupt_State *state) {
-    TODO_P(PROJECT_SIGNALS, "Alarm");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_SIGNALS, "Alarm");
+  return EUNSUPPORTED;
 }
 
 static int Sys_Sbrk(struct Interrupt_State *state) {
-    TODO_P(PROJECT_MALLOC,
-           "underlying system call that allows malloc to work");
-    return EUNSUPPORTED;
+  TODO_P(PROJECT_MALLOC, "underlying system call that allows malloc to work");
+  return EUNSUPPORTED;
 }
 
 /*
  * Global table of system call handler functions.
  */
 const Syscall g_syscallTable[] = {
-    Sys_Null,
-    Sys_Exit,
-    Sys_PrintString,
-    Sys_GetKey,
-    Sys_SetAttr,
-    Sys_GetCursor,
-    Sys_PutCursor,
-    Sys_Spawn,
-    Sys_Wait,
-    Sys_GetPID,
-    Sys_Kill,
-    Sys_PS,
-    Sys_Signal,
-    Sys_RegDeliver,
-    Sys_ReturnSignal,
-    Sys_WaitNoPID,
+    Sys_Null, Sys_Exit, Sys_PrintString, Sys_GetKey, Sys_SetAttr, Sys_GetCursor,
+    Sys_PutCursor, Sys_Spawn, Sys_Wait, Sys_GetPID, Sys_Kill, Sys_PS,
+    Sys_Signal, Sys_RegDeliver, Sys_ReturnSignal, Sys_WaitNoPID,
     /* Scheduling and semaphore system calls. */
-    Sys_SetSchedulingPolicy,
-    Sys_GetTimeOfDay,
-    Sys_Open_Semaphore,
-    Sys_P,
-    Sys_V,
+    Sys_SetSchedulingPolicy, Sys_GetTimeOfDay, Sys_Open_Semaphore, Sys_P, Sys_V,
     Sys_Close_Semaphore,
     /* File I/O system calls. */
-    Sys_Mount,
-    Sys_Open,
-    Sys_OpenDirectory,
-    Sys_Close,
-    Sys_Delete,
-    Sys_Read,
-    Sys_ReadEntry,
-    Sys_Write,
-    Sys_Stat,
-    Sys_FStat,
-    Sys_Seek,
-    Sys_CreateDir,
-    Sys_Sync,
-    Sys_Format,
-    Sys_ShutDown,
-    Sys_ReadBlock,
-    Sys_WriteBlock,
+    Sys_Mount, Sys_Open, Sys_OpenDirectory, Sys_Close, Sys_Delete, Sys_Read,
+    Sys_ReadEntry, Sys_Write, Sys_Stat, Sys_FStat, Sys_Seek, Sys_CreateDir,
+    Sys_Sync, Sys_Format, Sys_ShutDown, Sys_ReadBlock, Sys_WriteBlock,
     /* Networking calls */
-    Sys_EthPacketSend,
-    Sys_EthPacketReceive,
-    Sys_Arp,
-    Sys_RouteAdd,
-    Sys_RouteDel,
-    Sys_RouteGet,
-    Sys_IPConfigure,
-    Sys_IPGet,
-    Sys_IPSend,
+    Sys_EthPacketSend, Sys_EthPacketReceive, Sys_Arp, Sys_RouteAdd,
+    Sys_RouteDel, Sys_RouteGet, Sys_IPConfigure, Sys_IPGet, Sys_IPSend,
     /* Socket API */
-    Sys_Socket,
-    Sys_Bind,
-    Sys_Listen,
-    Sys_Accept,
-    Sys_Connect,
-    Sys_Send,
-    Sys_Receive,
-    Sys_SendTo,
-    Sys_ReceiveFrom,
-    Sys_CloseSocket,
+    Sys_Socket, Sys_Bind, Sys_Listen, Sys_Accept, Sys_Connect, Sys_Send,
+    Sys_Receive, Sys_SendTo, Sys_ReceiveFrom, Sys_CloseSocket,
     /* User related calls */
-    Sys_Limit,
-    Sys_GetUid,
-    Sys_SetSetUid,
-    Sys_SetEffectiveUid,
-    Sys_SetAcl,
+    Sys_Limit, Sys_GetUid, Sys_SetSetUid, Sys_SetEffectiveUid, Sys_SetAcl,
     /* sound */
     Sys_PlaySoundFile,
     /* unix interface */
-    Sys_Pipe,
-    Sys_Fork,
-    Sys_Execl,
+    Sys_Pipe, Sys_Fork, Sys_Execl,
     /* diagnostics and debugging */
-    Sys_Diagnostic,
-    Sys_Disk_Properties,
+    Sys_Diagnostic, Sys_Disk_Properties,
     /* SMP functions */
-    Sys_Set_Affinity,
-    Sys_Get_Affinity,
-    Sys_Clone,
+    Sys_Set_Affinity, Sys_Get_Affinity, Sys_Clone,
     /* memory mapped files */
-    Sys_Mmap,
-    Sys_Munmap,
-    Sys_Alarm,
-    Sys_Rename,
-    Sys_Link,
-    Sys_SymLink,
-    Sys_Sbrk
-};
+    Sys_Mmap, Sys_Munmap, Sys_Alarm, Sys_Rename, Sys_Link, Sys_SymLink,
+    Sys_Sbrk};
 
 /*
  * Number of system calls implemented.
  */
-const unsigned int g_numSyscalls =
-    sizeof(g_syscallTable) / sizeof(Syscall);
+const unsigned int g_numSyscalls = sizeof(g_syscallTable) / sizeof(Syscall);

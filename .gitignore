@@ -1,7 +1,8 @@
 # Submit Files
 submit.jar
 .submitUser
-
+.vagrant/
+.clang_complete
 # Build Files
 build/.gdbinit
 build/output.log
