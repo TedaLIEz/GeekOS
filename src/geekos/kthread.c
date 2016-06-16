@@ -119,11 +119,11 @@ static void Init_Thread(struct Kernel_Thread *kthread, void *stackPage,
     kthread->totalTime = 0;
 
     /*
-     * The thread has an implicit self-reference and 
-     * has a reference from its parent.  
-     * 
+     * The thread has an implicit self-reference and
+     * has a reference from its parent.
+     *
      * In some assignments, "detached" process may not
-     * have a reference from a parent and cannot be 
+     * have a reference from a parent and cannot be
      * Wait()ed on.
      */
     kthread->refCount = 2;      /* detached ? 1 : 2; */
@@ -204,7 +204,7 @@ static void Destroy_Thread(struct Kernel_Thread *kthread) {
 /*
  * Hand given thread to the reaper for destruction.
  * Must NOT be called with interrupts enabled! Because
- * that will cause grief if we are exiting and are 
+ * that will cause grief if we are exiting and are
  * interrupted and thus placed on the run queue and the
  * graveyard queue!
  */
@@ -214,9 +214,9 @@ static void Reap_Thread(struct Kernel_Thread *kthread) {
     KASSERT(kthread != CPUs[1].idleThread);
 
     /* Interrupts must be disabled for the Wake_Up,
-       but also best to have interrupts disabled 
+       but also best to have interrupts disabled
        completely while we exit and deposit ourselves
-       on the graveyard queue so that we're not 
+       on the graveyard queue so that we're not
        put on the run queue */
     KASSERT(!Interrupts_Enabled());
 
@@ -424,7 +424,7 @@ static void Setup_Kernel_Thread(struct Kernel_Thread *kthread,
  */
 static void Idle(ulong_t arg __attribute__ ((unused))) {
     while (true) {
-        /* 
+        /*
          * The hlt instruction tells the CPU to wait until an interrupt is called.
          * We call this in this loop so the Idle process does not eat up 100% cpu,
          * and make our laptops catch fire.
@@ -993,7 +993,7 @@ void Wake_Up(struct Thread_Queue *waitQueue) {
                 ("failed to acquire kthreadlock while interrupts are disabled; "
                  "yielding to avoid deadlock.\n");
             /* probably yields to the idle thread, since kthreadlock is held. */
-            /* make runnable should not be run, since it expects the 
+            /* make runnable should not be run, since it expects the
                kthreadlock to be held. */
             Make_Runnable(get_current_thread(0));
             Schedule();

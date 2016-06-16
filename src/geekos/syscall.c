@@ -17,26 +17,26 @@
  * CMSC412 course.
  *
  */
-#include <geekos/int.h>
-#include <geekos/elf.h>
-#include <geekos/errno.h>
-#include <geekos/keyboard.h>
-#include <geekos/kthread.h>
-#include <geekos/malloc.h>
-#include <geekos/projects.h>
-#include <geekos/screen.h>
-#include <geekos/sem.h>
-#include <geekos/signal.h>
-#include <geekos/string.h>
-#include <geekos/syscall.h>
-#include <geekos/timer.h>
-#include <geekos/user.h>
-#include <geekos/vfs.h>
+ #include <geekos/syscall.h>
+ #include <geekos/errno.h>
+ #include <geekos/kthread.h>
+ #include <geekos/int.h>
+ #include <geekos/elf.h>
+ #include <geekos/malloc.h>
+ #include <geekos/screen.h>
+ #include <geekos/keyboard.h>
+ #include <geekos/string.h>
+ #include <geekos/user.h>
+ #include <geekos/timer.h>
+ #include <geekos/vfs.h>
+ #include <geekos/signal.h>
+ #include <geekos/sem.h>
+ #include <geekos/projects.h>
 
-#include <geekos/mem.h>
-#include <geekos/pipe.h>
-#include <geekos/smp.h>
-#include <geekos/sys_net.h>
+ #include <geekos/sys_net.h>
+ #include <geekos/pipe.h>
+ #include <geekos/mem.h>
+ #include <geekos/smp.h>
 
 extern Spin_Lock_t kthreadLock;
 
@@ -911,15 +911,25 @@ static int Sys_Pipe(struct Interrupt_State *state) {
   write_id = add_file_to_descriptor_table(write);
   Copy_To_User(state->ebx, &read_id, sizeof(read_id));
   Copy_To_User(state->ecx, &write_id, sizeof(write_id));
-  // TODO: Using Pipe_Create to create pipe.
   // TODO_P(PROJECT_PIPE, "Pipe system call");
   Disable_Interrupts();
   return 0;
 }
 
 static int Sys_Fork(struct Interrupt_State *state) {
+    //TODO: Copy the parent address space
   TODO_P(PROJECT_FORK, "Fork system call");
-  return EUNSUPPORTED;
+  int pid = CURRENT_THREAD->pid;
+  Enable_Interrupts();
+  struct Kernel_Thread *process = 0;
+  //TODO: deep copy of CURRENT_THREAD->userContext
+  process = Start_User_Thread(CURRENT_THREAD->userContext, 0);
+  //TODO: change stack page
+  if (CURRENT_THREAD->pid == pid) {
+      return 0;
+  }
+  Disable_Interrupts();
+  return 0;
 }
 
 /*

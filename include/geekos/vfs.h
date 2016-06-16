@@ -1,3 +1,4 @@
+
 /*
  * Virtual filesystem structures and routines
  * Copyright (c) 2003, Jeffrey K. Hollingsworth <hollings@cs.umd.edu>
@@ -12,7 +13,7 @@
  * enrolled in similar operating systems courses the University of Maryland's CMSC412 course.
  *
  * $Revision: 1.45 $
- * 
+ *
  */
 
 #ifndef GEEKOS_VFS_H

@@ -11,7 +11,7 @@
  * enrolled in similar operating systems courses the University of Maryland's CMSC412 course.
  *
  * $Revision: 1.16 $
- * 
+ *
  */
 
 #ifndef GEEKOS_KASSERT_H
