@@ -12,7 +12,7 @@
  * enrolled in similar operating systems courses the University of Maryland's CMSC412 course.
  *
  * $Revision: 1.34 $
- * 
+ *
  */
 
 #ifndef GEEKOS_KTHREAD_H
@@ -128,6 +128,10 @@ struct Kernel_Thread *Start_Kernel_Thread(Thread_Start_Func startFunc,
                                           const char *name);
 struct Kernel_Thread *Start_User_Thread(struct User_Context *userContext,
                                         bool detached);
+struct Kernel_Thread *CopyandStart_User_Thread(struct Kernel_Thread *srckt,
+                                               struct User_Context *userc);
+void Setup_User_Thread(struct Kernel_Thread *kthread,
+                       struct User_Context *userContext);
 void Make_Runnable(struct Kernel_Thread *kthread);
 void Make_Runnable_Atomic(struct Kernel_Thread *kthread);
 struct Kernel_Thread *Get_Current(void);

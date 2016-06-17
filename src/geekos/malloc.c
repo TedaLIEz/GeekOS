@@ -2,7 +2,7 @@
  * GeekOS memory allocation API
  * Copyright (c) 2001, David H. Hovemeyer <daveho@cs.umd.edu>
  * $Revision: 1.13 $
- *
+ * 
  * This is free software.  You are permitted to use,
  * redistribute, and modify it as specified in the file "COPYING".
  */
@@ -53,8 +53,4 @@ void Free(void *buf) {
     iflag = Begin_Int_Atomic();
     brel(buf);
     End_Int_Atomic(iflag);
-}
-
-void mem_copy(void *origin, void *target, int size) {
-
 }

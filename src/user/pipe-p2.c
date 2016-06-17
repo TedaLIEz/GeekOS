@@ -28,17 +28,19 @@ int main(int argc, char **argv) {
         buf[i] = i;
     }
 
-    /* Print("calling pipe"); */
+    Print("calling pipe\n");
     pipe_retval = Pipe(&read_fd, &write_fd);
     assert(pipe_retval == 0);
 
     for(i = 0; i < 10; i++) {
         written_bytes = Write(write_fd, buf, 1024);
+        Print("written %d bytes to pipe\n", written_bytes);
         assert(written_bytes == 1024);
     }
 
     for(i = 0; i < 10; i++) {
         read_bytes = Read(read_fd, buf, 1024);
+        Print("read %d bytes from pipe\n", written_bytes);
         assert(read_bytes == 1024);
         for(j = 0; j < 1024; j++) {
             if(buf[j] != (char)j) {

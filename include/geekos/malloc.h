@@ -12,7 +12,7 @@
  * enrolled in similar operating systems courses the University of Maryland's CMSC412 course.
  *
  * $Revision: 1.9 $
- *
+ * 
  */
 
 #ifndef GEEKOS_MALLOC_H
@@ -23,6 +23,5 @@
 void Init_Heap(ulong_t start, ulong_t size);
 void *Malloc(ulong_t size);
 void Free(void *buf);
-void mem_copy(void *origin, void *target, int size);
 
 #endif /* GEEKOS_MALLOC_H */

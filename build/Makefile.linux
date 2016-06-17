@@ -10,19 +10,17 @@ RANDOM_PORT := $(shell $(PROJECT_ROOT)/scripts/random_port)
 # HOST := $(shell hostname)
 HOST := "localhost"
 
-QEMU_BIN ?= $(shell which qemu-system-i386 || which qemu) 
+QEMU_BIN ?= $(shell which qemu-system-i386 || which qemu)
 MEM ?= 512
-# smp : symmetric multiprocessing
-# icount: virtual instruction counter
-QEMU ?= $(QEMU_BIN) -smp 2 -rtc clock=vm -rtc base=2014-01-01T00:00:00 -device isa-debug-exit,iobase=0x501 -m $(MEM) -debugcon file:output.log -serial stdio 
+QEMU ?= $(QEMU_BIN) -smp 2 -rtc clock=vm -rtc base=2014-01-01T00:00:00 -device isa-debug-exit,iobase=0x501  -m $(MEM) -debugcon file:output.log -serial stdio
 
-# to use COM2 on stdio, omit -serial stdio and add: 
-# -device isa-serial,iobase=0x2f8,irq=3,index=2,chardev=s2 -chardev stdio,id=s2 
+# to use COM2 on stdio, omit -serial stdio and add:
+# -device isa-serial,iobase=0x2f8,irq=3,index=2,chardev=s2 -chardev stdio,id=s2
 
 # to use COM1 on a telnet port, omit -serial stdio add
 # -device isa-serial,iobase=0x3f8,irq=4,index=2,chardev=s2 -chardev socket,host=localhost,port=12345,telnet=on,server,id=s2
 
-# to use COM2 on a telnet port, merge those above. 
+# to use COM2 on a telnet port, merge those above.
 
 DISP_OPTION = $(shell $(PROJECT_ROOT)/scripts/display_opt)
 
@@ -31,7 +29,7 @@ run: all gdbinit
 	$(QEMU) $(DISP_OPTION) diskc.img -hdb diskd.img $(GDB_OPT) $(ARGS)
 
 # build an ISO CD-rom image
-iso: all 
+iso: all
 	@-mkdir boot
 	cp diskc.img boot
 	cp fd_aug.img boot

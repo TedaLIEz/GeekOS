@@ -1,6 +1,6 @@
 /*
  * GeekOS file system
- * Copyright (c) 2008, David H. Hovemeyer <daveho@cs.umd.edu>,
+ * Copyright (c) 2008, David H. Hovemeyer <daveho@cs.umd.edu>, 
  * Neil Spring <nspring@cs.umd.edu>, Aaron Schulman <schulman@cs.umd.edu>
  *
  * All rights reserved.
@@ -30,27 +30,6 @@
  * Private data and functions
  * ---------------------------------------------------------------------- */
 
-
-
-
-
-
- // Calculate the size for a new dirent
-int dirent_sizeof(struct gfs3_dirent *dirent) {
-    //unsigned char automaticlly cast to unsigned int
-    int num = 4 + 2 + dirent->name_length;
-    int tmp = num % 4;
-    if (tmp <= 2) {
-        return num - tmp;
-    } else {
-        return num + 4 - tmp;
-    }
-}
-
-//TODO: construct a struct gfs3_dirent
-struct gfs3_dirent constructor() {
-    return NULL;
-}
 
 /* ----------------------------------------------------------------------
  * Implementation of VFS operations
@@ -228,56 +207,8 @@ static int GFS3_Format(struct Block_Device *blockDev
     return EUNSUPPORTED;
 }
 
-
-// struct for gfs3_instance
-struct GFS3_Instance {
-    struct gfs3_superblock fsinfo;
-    struct gfs3_inode inode;
-    struct gfs3_dirent dir;
-    struct Mutex lock;
-    // pointer of the currentDir;
-    struct GFS3_Instance *currDir;
-    // parent of the currentDir
-    struct GFS3_Instance *rootDir;
-}；
-
-
-//TODO: implement mount first
 static int GFS3_Mount(struct Mount_Point *mountPoint) {
     TODO_P(PROJECT_GFS3, "GeekOS filesystem mount operation");
-    struct GFS3_Instance *instance = 0;
-    struct gfs3_superblock *fsinfo;
-    void *bootSect = 0;
-    int rootDirSize = 0;
-    int rc;
-    int i;
-    instance = (struct GFS3_Instance*) Malloc(sizeof(*instance));
-    if (instance == 0) {
-        //goto failed
-    }
-    memset(instance, '\0', sizeof(*instance));
-    fsinfo = &instance->fsinfo;
-    Debug("Created instance object\n");
-    //
-    bootSect = Malloc(SECTOR_SIZE);
-    if (bootSect == 0) {
-        //goto failed
-    }
-    if ((rc = Block_Read(mountPoint->dev, 0, bootSect)) < 0) {
-        // goto failed;
-    }
-    Debug("Read boot sector\n");
-    memcpy(&instance->fsinfo, ((char *)bootSect) + PFAT_BOOT_RECORD_OFFSET, sizeof(struct gfs3_superblock));
-    Debug("Copied boot record\n");
-
-    // Check magic number
-    if (fsinfo->magic != GFS3_MAGIC) {
-        Print("Bad magic number (%x) for GFS3 filesystem\n",
-              fsinfo->magic);
-        // goto failed;
-    }
-    Debug("Magic number is good!\n");
-
     return EUNSUPPORTED;
 }
 

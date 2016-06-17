@@ -41,6 +41,8 @@ int Pipe_Create(struct File **read_file, struct File **write_file) {
     // Create Pipe, some params are useless
     (*read_file) = Allocate_File(&Pipe_Read_Ops, 0, 0, pipe, 0, 0);
     (*write_file) = Allocate_File(&Pipe_Write_Ops, 0, 0, pipe, 0, 0);
+    (*read_file)->refCount = 1;
+    (*write_file)->refCount = 1;
 
     return 0;
 }
@@ -97,11 +99,14 @@ int Pipe_Close(struct File *f) {
     if (pipe->readers == 0 || pipe->writers == 0) {
         return 0;
     }
-    if (f->ops->Read != NULL) {
-        pipe->readers -= 1;
-    }
-    else if (f->ops->Write != NULL) {
-        pipe->writers -= 1;
+
+    if (f->refCount == 0) {
+        if (f->ops->Read != NULL) {
+            pipe->readers -= 1;
+        }
+        else if (f->ops->Write != NULL) {
+            pipe->writers -= 1;
+        }
     }
     return 0;
 }

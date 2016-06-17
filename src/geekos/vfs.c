@@ -12,7 +12,7 @@
  * enrolled in similar operating systems courses the University of Maryland's CMSC412 course.
  *
  * $Revision: 1.47 $
- * 
+ *
  */
 
 #include <geekos/errno.h>
@@ -393,6 +393,9 @@ int Mount(const char *devname, const char *pathPrefix, const char *fstype) {
 int Open(const char *path, int mode, struct File **pFile) {
     int rc = Do_Open(path, mode, pFile, &Do_Open_File);
     /*if (rc != 0) { Print("File open failed with code %d\n", rc); } */
+    Mutex_Lock(&s_vfsLock);
+    (*pFile)->refCount = 1;
+    Mutex_Unlock(&s_vfsLock);
     return rc;
 }
 
@@ -409,10 +412,12 @@ int Close(struct File *file) {
 
     KASSERT(file->ops->Close != 0);     /* All filesystems must implement Close(). */
 
-    TODO_P(PROJECT_FORK, "Manage reference count");
+    Mutex_Lock(&s_vfsLock);
+    file->refCount--;
+    Mutex_Unlock(&s_vfsLock);
 
     rc = file->ops->Close(file);
-    if(rc == 0)
+    if(rc == 0 && file->refCount == 0)
         Free(file);
     return rc;
 }
@@ -816,13 +821,13 @@ int Read_Entry(struct File *file, struct VFS_Dir_Entry *entry) {
         return file->ops->Read_Entry(file, entry);
 }
 
-/* 
- * Get disk properties 
+/*
+ * Get disk properties
  * Params:
- *  path - a pathname that reaches the correct file system 
+ *  path - a pathname that reaches the correct file system
  *  file_system_block_size - pointer to a value that will become 512, 1024, 2048, 4096.
- *  blocks_on_disk - pointer to a value that will become the number of 
- *        fs sized blocks in the disk 
+ *  blocks_on_disk - pointer to a value that will become the number of
+ *        fs sized blocks in the disk
  */
 
 int Disk_Properties(const char *path,

@@ -128,7 +128,7 @@ static int PFAT_Read(struct File *file, void *buf, ulong_t numBytes) {
     if(numBytes > INT_MAX)
         return EINVALID;
 
-    /* if the file is an even multiple of numBytes, then with repeated reads,
+    /* if the file is an even multiple of numBytes, then with repeated reads, 
        we may end up with a read starting just at the end of the file.  such
        is not invalid, it is just the end of the file. (ns) */
     if(start == file->endPos) {
@@ -327,7 +327,7 @@ static int PFAT_Seek(struct File *file, ulong_t pos) {
     if(pos >= file->endPos)
         return EINVALID;
     if(file->filePos != pos) {
-        // read from start of FAT linked list for this file to desired position
+        // read from start of FAT linked list for this file to desired position 
         file->filePos = pos;
         KASSERT(pfatFile->entry);
         ulong_t curBlock = pfatFile->entry->firstBlock;
@@ -913,7 +913,7 @@ static struct Filesystem_Ops s_pfatFilesystemOps = {
 /* ----------------------------------------------------------------------
  * Public functions
  * ---------------------------------------------------------------------- */
-
+
 void Init_PFAT(void) {
     Register_Filesystem("pfat", &s_pfatFilesystemOps);
 }

@@ -661,6 +661,39 @@ struct Kernel_Thread *Start_User_Thread(struct User_Context *userContext,
     return kthread;
 }
 
+struct Kernel_Thread *CopyandStart_User_Thread(struct Kernel_Thread *srckt,
+                                               struct User_Context *userc) {
+    // Create a new thread
+    struct Kernel_Thread *kthread = Create_Thread(PRIORITY_USER, 0);
+    if(kthread != 0){
+
+        // Init the new thread
+        Setup_User_Thread(kthread, userc);
+        kthread->esp = srckt->esp -
+            (ulong_t)(srckt->stackPage - kthread->stackPage);
+
+        // Compute stack offset
+        ulong_t stack_size =
+            ((ulong_t)kthread->stackPage + PAGE_SIZE - kthread->esp) / 4;
+        ulong_t *src_stack =
+            (ulong_t*)srckt->stackPage + PAGE_SIZE / 4 - stack_size;
+        ulong_t *dst_stack =
+            (ulong_t*)kthread->stackPage + PAGE_SIZE / 4 - stack_size;
+
+        // Copy the registers one by one in stackPage
+        ulong_t i;
+        for (i = 0; i < stack_size; i++) {
+            dst_stack[i] = src_stack[i];
+            if (i == 10) {
+                dst_stack[i] = 0;
+            }
+        }
+        Make_Runnable_Atomic(kthread);
+    }
+
+    return kthread;
+}
+
 /*
  * Add given thread to the run queue, so that it
  * may be scheduled.  Must be called with interrupts disabled!
